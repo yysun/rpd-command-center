@@ -99,4 +99,4 @@ The Electron desktop application. Depends on `core` as a local workspace package
 | AC-5 | `core` builds independently (`npm run build --workspace=core`) with no Electron/DOM imports |
 | AC-6 | ESLint passes with zero errors across both packages |
 | AC-7 | `BrowserWindow` is created with `nodeIntegration: false` and `contextIsolation: true` |
-| AC-8 | `electron` package lists `core` as a local workspace dependency (`"core": "workspace:*"`) and can import from it at runtime |
+| AC-8 | `electron` package lists `core` as a local workspace dependency (`"core": "*"`) and can import from it at runtime |

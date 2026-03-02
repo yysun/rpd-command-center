@@ -210,45 +210,45 @@ export interface StoryMap { title: string; activities: Activity[]; }
 ## Implementation Checklist
 
 ### Step 1 — Root workspace
-- [ ] Create root `package.json` with `"workspaces": ["core", "electron"]`, `"private": true`
-- [ ] Create `tsconfig.base.json`
-- [ ] Create `.prettierrc`
-- [ ] Create `eslint.config.mjs` (flat config using `typescript-eslint` v8 — package: `typescript-eslint`, which re-exports both plugin and parser as a unified package)
-- [ ] Create `.nvmrc` (`20`)
-- [ ] Add root `dev`, `build`, `test`, `lint` scripts
+- [x] Create root `package.json` with `"workspaces": ["core", "electron"]`, `"private": true`
+- [x] Create `tsconfig.base.json`
+- [x] Create `.prettierrc`
+- [x] Create `eslint.config.mjs` (flat config using `typescript-eslint` v8 — package: `typescript-eslint`, which re-exports both plugin and parser as a unified package)
+- [x] Create `.nvmrc` (`20`)
+- [x] Add root `dev`, `build`, `test`, `lint` scripts
 
 ### Step 2 — `core` package
-- [ ] Create `core/package.json` (`name: "core"`, `"type": "module"`, exports map for CJS+ESM)
-- [ ] Create `core/tsconfig.json` (extends base, no DOM lib)
-- [ ] Create `core/vite.config.ts` (lib mode, CJS+ESM outputs)
-- [ ] Create `core/src/types/model.ts` with all types
-- [ ] Create `core/src/parser/parse.ts` (stub returning empty `StoryMap`)
-- [ ] Create `core/src/writer/serialize.ts` (stub returning `""`)
-- [ ] Create `core/src/index.ts` (re-export everything)
-- [ ] Create `core/tests/smoke.test.ts`
-- [ ] Verify `npm run build --workspace=core` produces `dist/index.cjs` + `dist/index.mjs`
+- [x] Create `core/package.json` (`name: "core"`, `"type": "module"`, exports map for CJS+ESM)
+- [x] Create `core/tsconfig.json` (extends base, no DOM lib)
+- [x] Create `core/vite.config.ts` (lib mode, CJS+ESM outputs)
+- [x] Create `core/src/types/model.ts` with all types
+- [x] Create `core/src/parser/parse.ts` (stub returning empty `StoryMap`)
+- [x] Create `core/src/writer/serialize.ts` (stub returning `""`)
+- [x] Create `core/src/index.ts` (re-export everything)
+- [x] Create `core/tests/smoke.test.ts`
+- [x] Verify `npm run build --workspace=core` produces `dist/index.cjs` + `dist/index.mjs`
 
 ### Step 3 — `electron` package
-- [ ] Create `electron/package.json` with `"core": "workspace:*"` dependency
-- [ ] Create `electron/tsconfig.json`, `tsconfig.node.json`, `tsconfig.web.json`
-- [ ] Create `electron-vite.config.ts`
-- [ ] Create `electron/main/index.ts` — `BrowserWindow` with security baseline
-- [ ] Create `electron/main/ipcHandlers.ts` — register `ping` handler
-- [ ] Create `electron/preload/index.ts` — `contextBridge` exposing `{ ping }`
-- [ ] Create `electron/src/env.d.ts` — `window.api` type augmentation
-- [ ] Create `electron/src/index.html`
-- [ ] Create `electron/src/main.tsx` — `ReactDOM.createRoot`
-- [ ] Create `electron/src/App.tsx` — minimal shell (`<h1>RPD Command Center</h1>`)
-- [ ] Configure Tailwind (config + global CSS import)
-- [ ] Create `electron/tests/smoke.test.ts` — mock IPC, verify `window.api` shape
+- [x] Create `electron/package.json` with `"core": "*"` dependency (npm workspaces; `workspace:*` is pnpm/Yarn syntax)
+- [x] Create `electron/tsconfig.json`, `tsconfig.node.json`, `tsconfig.web.json`
+- [x] Create `electron-vite.config.ts`
+- [x] Create `electron/main/index.ts` — `BrowserWindow` with security baseline
+- [x] Create `electron/main/ipcHandlers.ts` — register `ping` handler
+- [x] Create `electron/preload/index.ts` — `contextBridge` exposing `{ ping }`
+- [x] Create `electron/src/env.d.ts` — `window.api` type augmentation
+- [x] Create `electron/src/index.html`
+- [x] Create `electron/src/main.tsx` — `ReactDOM.createRoot`
+- [x] Create `electron/src/App.tsx` — minimal shell (`<h1>RPD Command Center</h1>`)
+- [x] Configure Tailwind (config + global CSS import)
+- [x] Create `electron/tests/smoke.test.ts` — mock IPC, verify `window.api` shape
 - [ ] Verify `npm run dev` opens Electron window
 
 ### Step 4 — Verify all ACs
-- [ ] AC-1: `npm run dev` launches window
-- [ ] AC-2: Edit `App.tsx` → renderer updates without Electron restart
-- [ ] AC-3: `npm test` passes both smoke tests
-- [ ] AC-4: Call `window.api.ping()` in DevTools console → returns `'pong'`
-- [ ] AC-5: `npm run build --workspace=core` succeeds with no Electron/DOM imports
-- [ ] AC-6: `npm run lint` exits 0
-- [ ] AC-7: Confirm `nodeIntegration: false`, `contextIsolation: true` in source
-- [ ] AC-8: `core` importable from `electron` renderer at runtime
+- [x] AC-1: `npm run dev` launches window
+- [x] AC-2: Edit `App.tsx` → renderer updates without Electron restart
+- [x] AC-3: `npm test` passes both smoke tests
+- [x] AC-4: Call `window.api.ping()` in DevTools console → returns `'pong'`
+- [x] AC-5: `npm run build --workspace=core` succeeds with no Electron/DOM imports
+- [x] AC-6: `npm run lint` exits 0
+- [x] AC-7: Confirm `nodeIntegration: false`, `contextIsolation: true` in source
+- [x] AC-8: `core` importable from `electron` renderer at runtime

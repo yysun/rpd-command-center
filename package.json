@@ -1,0 +1,20 @@
+{
+  "name": "rpd-command-center",
+  "private": true,
+  "version": "0.0.1",
+  "workspaces": [
+    "core",
+    "electron"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=electron",
+    "build": "npm run build --workspace=core && npm run build --workspace=electron",
+    "test": "npm test --workspaces --if-present",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "typescript-eslint": "^8.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0"
+  }
+}

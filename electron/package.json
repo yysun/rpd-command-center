@@ -1,0 +1,39 @@
+{
+  "name": "electron-app",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/main.js",
+  "scripts": {
+    "main:build": "tsc --project tsconfig.electron.json",
+    "main:watch": "tsc --project tsconfig.electron.json --watch --preserveWatchOutput",
+    "renderer:dev": "vite --config vite.config.mts",
+    "renderer:build": "vite build --config vite.config.mts",
+    "electron:dev": "wait-on http://127.0.0.1:5182 file:dist/main.js && cross-env ELECTRON_RENDERER_URL=http://127.0.0.1:5182 electron .",
+    "dev": "npm-run-all --sequential main:build --parallel main:watch renderer:dev electron:dev",
+    "build": "npm run main:build && npm run renderer:build",
+    "start": "npm run build && electron .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^5.1.4",
+    "core": "*"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^5.1.4",
+    "@vitest/coverage-v8": "^1.6.0",
+    "autoprefixer": "^10.4.0",
+    "cross-env": "^7.0.3",
+    "electron": "^30.0.0",
+    "npm-run-all": "^4.1.5",
+    "postcss": "^8.4.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "tailwindcss": "^3.4.0",
+    "typescript": "^5.4.0",
+    "vite": "^5.0.0",
+    "vitest": "^1.6.0",
+    "wait-on": "^7.2.0"
+  }
+}
