@@ -1,42 +1,134 @@
 # User Story Map — RPD Command Center
 
-- Foundations #activity
+- Core: Foundations #activity
   - Project Setup #task
-    - Scaffold Electron app #story
-      status:: todo
-      slug:: scaffold-electron-app
-    - Configure build toolchain #story
-      status:: todo
-      slug:: configure-build-toolchain
     - Define requirements #story
       status:: done
       slug:: define-requirements
       - 2026-03-02 → req-story-map-manager.md
-  - Workspace & File Loading #task
-    - Open workspace folder #story
+    - Scaffold monorepo and core package #story
       status:: todo
-      slug:: open-workspace-folder
-    - Choose story map file #story
+      slug:: scaffold-core-package
+    - Configure core build toolchain #story
       status:: todo
-      slug:: choose-story-map-file
-    - Parse markdown into internal model #story
+      slug:: configure-core-build
+  - Data Model & Types #task
+    - Define Activity / Task / Story type hierarchy #story
+      status:: todo
+      slug:: define-type-hierarchy
+    - Define Story fields schema (status, slug, notes, doc refs) #story
+      status:: todo
+      slug:: define-story-fields-schema
+  - Parser #task
+    - Parse markdown outline into internal model #story
       status:: todo
       slug:: parse-markdown-to-model
-    - Render basic story hierarchy #story
+    - Parse Form A inline properties (key:: value) #story
       status:: todo
-      slug:: render-basic-hierarchy
-  - File Saving #task
-    - Atomic save (write-temp + rename) #story
+      slug:: parse-form-a-properties
+    - Parse Form B legacy property patterns #story
+      status:: todo
+      slug:: parse-form-b-legacy
+    - Round-trip fidelity tests #story
+      status:: todo
+      slug:: parser-round-trip-tests
+  - Serializer #task
+    - Serialize model to Markdown (Preserve Existing mode) #story
+      status:: todo
+      slug:: serialize-preserve-existing
+    - Serialize model to Markdown (Normalize mode) #story
+      status:: todo
+      slug:: serialize-normalize
+    - Atomic write (write-temp + rename) #story
       status:: todo
       slug:: atomic-save
     - Create .bak backup on save #story
       status:: todo
       slug:: backup-on-save
-    - Detect external file modifications #story
+
+- Core: File & Workspace #activity
+  - IPC Handlers #task
+    - IPC: open workspace folder #story
+      status:: todo
+      slug:: ipc-open-workspace
+    - IPC: watch file for external changes #story
+      status:: todo
+      slug:: ipc-watch-file
+    - IPC: atomic save and backup #story
+      status:: todo
+      slug:: ipc-atomic-save
+  - Business Logic #task
+    - Full-text search algorithm (title, slug, notes, doc filenames) #story
+      status:: todo
+      slug:: search-algorithm
+    - Status and doc-coverage filter logic #story
+      status:: todo
+      slug:: filter-logic
+    - Slug uniqueness validation #story
+      status:: todo
+      slug:: slug-validation-logic
+    - Progress metrics (counts, percent-done) #story
+      status:: todo
+      slug:: metrics-logic
+
+- Frontend Design #activity
+  - Layout & Design System #task
+    - Define three-panel layout (sidebar / outliner / inspector) #story
+      status:: todo
+      slug:: design-three-panel-layout
+    - Choose color palette and typography #story
+      status:: todo
+      slug:: design-color-typography
+    - Design component library (chips, dropdowns, buttons) #story
+      status:: todo
+      slug:: design-component-library
+  - Outliner & Inspector Wireframes #task
+    - Outliner block row design (activity, task, story with chips) #story
+      status:: todo
+      slug:: wireframe-outliner-block
+    - Inspector panel field layout #story
+      status:: todo
+      slug:: wireframe-inspector-panel
+    - Collapsed and expanded node states #story
+      status:: todo
+      slug:: wireframe-collapse-expand
+  - Search & Focus Wireframes #task
+    - Search bar and filter panel design #story
+      status:: todo
+      slug:: wireframe-search-filter
+    - Focus mode / zoom view layout #story
+      status:: todo
+      slug:: wireframe-focus-mode
+    - Progress summary card design #story
+      status:: todo
+      slug:: wireframe-progress-summary
+
+- Frontend: App Shell #activity
+  - Electron Setup #task
+    - Scaffold Electron app #story
+      status:: todo
+      slug:: scaffold-electron-app
+    - Configure renderer build toolchain #story
+      status:: todo
+      slug:: configure-build-toolchain
+    - Set up IPC preload bridge #story
+      status:: todo
+      slug:: setup-ipc-preload
+  - Workspace & File Loading UI #task
+    - Open workspace folder dialog #story
+      status:: todo
+      slug:: open-workspace-folder
+    - Choose story map file UI #story
+      status:: todo
+      slug:: choose-story-map-file
+    - Render basic story hierarchy #story
+      status:: todo
+      slug:: render-basic-hierarchy
+    - Detect external file changes and prompt reload #story
       status:: todo
       slug:: detect-external-file-change
 
-- Outliner Core #activity
+- Frontend: Outliner #activity
   - Block Rendering #task
     - Display nested Activity → Task → Story outline #story
       status:: todo
@@ -78,7 +170,7 @@
       status:: todo
       slug:: redo-edit
 
-- Inspector & Validation #activity
+- Frontend: Inspector & Validation #activity
   - Inspector Panel #task
     - Open inspector when story block is selected #story
       status:: todo
@@ -132,7 +224,7 @@
       status:: todo
       slug:: inspector-copy-as-markdown
 
-- Search & Filters #activity
+- Frontend: Search & Filters #activity
   - Search #task
     - Full-text search across title, slug, notes, doc filenames #story
       status:: todo
@@ -167,7 +259,7 @@
       status:: todo
       slug:: query-by-status
 
-- Zoom & Focus Mode #activity
+- Frontend: Zoom & Focus Mode #activity
   - Focused View #task
     - Click activity or task to enter focused view #story
       status:: todo
@@ -192,7 +284,7 @@
       status:: todo
       slug:: focus-doc-refs-list
 
-- Doc Templates #activity
+- Frontend: Doc Templates #activity
   - Template Workflow #task
     - Create REQ doc from template via inspector action #story
       status:: todo
@@ -239,9 +331,6 @@
       status:: todo
       slug:: node-percent-done
   - Reliability & UX #task
-    - Prompt user to reload on external file change #story
-      status:: todo
-      slug:: reload-on-external-change
     - Configurable backup-on-save toggle #story
       status:: todo
       slug:: configurable-backup

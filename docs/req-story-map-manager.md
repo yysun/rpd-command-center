@@ -46,6 +46,77 @@ A desktop application for viewing, editing, and managing a project's User Story 
 
 ---
 
+## Development Phases
+
+The project is split into three layers — **Core**, **Frontend Design**, and **Frontend Implementation** — so the data/logic layer can be built and tested independently before any UI work begins.
+
+### Phase 1 — Core: Foundations
+Pure TypeScript library (`core/` package). No Electron or UI dependencies.
+- Define `Activity / Task / Story` type hierarchy and Story fields schema
+- Markdown parser supporting Form A (`key:: value`) and Form B legacy patterns
+- Markdown serializer with Preserve Existing and Normalize modes
+- Atomic write (write-temp + rename) and `.bak` backup logic
+
+### Phase 2 — Core: File & Workspace
+Electron main-process IPC handlers and headless business logic.
+- IPC handlers: open workspace folder, watch file for external changes, atomic save
+- Full-text search algorithm, status/doc-coverage filter logic
+- Slug uniqueness validation, progress metrics (counts, percent-done)
+
+### Phase 3 — Frontend Design
+Design deliverables that drive Phase 4–9 implementation (can run in parallel with Phase 2).
+- Three-panel layout definition (sidebar / outliner / inspector)
+- Color palette, typography, and component library (chips, dropdowns, buttons)
+- Wireframes: outliner block rows, inspector field layout, collapsed/expanded states
+- Wireframes: search/filter panel, focus mode / zoom view, progress summary card
+
+### Phase 4 — Frontend: App Shell
+Electron + Vite + React renderer scaffold wired to the core IPC layer.
+- Scaffold Electron app, configure renderer build toolchain
+- IPC preload bridge
+- Workspace folder dialog, story map file picker, basic hierarchy render
+- External-file-change prompt (reload dialog)
+
+### Phase 5 — Frontend: Outliner
+Interactive nested outliner (FR-2).
+- Block rendering with inline chips; collapse/expand
+- Block editing: Enter to add sibling, inline title edit, delete with confirmation
+- Block restructuring: Tab/Shift+Tab indent/outdent, drag-drop, cross-parent move
+- Undo/redo (in-session)
+
+### Phase 6 — Frontend: Inspector & Validation
+Right-side inspector panel and slug/doc-ref validation (FR-3).
+- Inspector panel with Title, Status, Slug, Notes, Doc Refs fields
+- Slug uniqueness and character validation surfaced in UI
+- Doc ref CRUD; open in system editor; copy path
+- Inspector actions: Mark Done, Move, Duplicate, Copy as Markdown
+
+### Phase 7 — Frontend: Search & Filters
+Search bar, filter panel, and saved queries (FR-4).
+- Full-text search with highlight
+- Multi-select status filter, doc-coverage filter, unfinished-tasks filter
+- Named filter presets; built-in queries (Doing, No Docs, Touched Recently, By Status)
+
+### Phase 8 — Frontend: Zoom & Focus Mode
+Focused view and progress summaries (FR-5).
+- Click activity/task to enter focus; back navigation
+- Status counts, percent-done, doc-coverage summary
+- Aggregated clickable doc refs in focused view
+
+### Phase 9 — Frontend: Doc Templates
+Template workflow wired to inspector (FR-6).
+- Create REQ/PLAN/DONE doc from template; auto-link into story
+- Filename generation (`{type}-{slug}.md`), date-folder placement
+- User-configurable template files
+
+### Phase 10 — Polish & Configuration
+Format mode setting, progress metrics display, and UX reliability (FR-6b, FR-7).
+- Format Mode setting (Preserve Existing / Normalize) persisted across sessions
+- Status counts and percent-done indicators on Activity/Task nodes
+- Configurable backup toggle, keyboard shortcuts overlay, parse-error panel
+
+---
+
 ## Data Model
 
 The source of truth is a single Markdown file (e.g., `user-story-map.md`).
