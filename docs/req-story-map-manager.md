@@ -1,0 +1,211 @@
+# REQ — User Story Map Manager
+
+**Date:** 2026-03-02  
+**Source:** `docs/prd.md`  
+**Status:** Draft
+
+---
+
+## Target Users
+
+Engineers and PMs using the RPD workflow who want to edit stories with the fluidity of a note-taking tool (outline) while preserving enough structure for automation and linking to REQ/PLAN/DONE artifacts.
+
+---
+
+## Assumptions & Constraints
+
+- Source of truth is a **single Markdown file** (e.g., `user-story-map.md`); multi-file vaults are out of scope for v1.
+- The file must remain **human-editable** in any text editor at all times.
+- The app runs as a local **Electron desktop application**; no server or background daemon is required.
+- No network access is required for any v1 feature.
+
+---
+
+## Overview
+
+A desktop application for viewing, editing, and managing a project's User Story Map stored as a Markdown file. The editing experience is outliner-first (keyboard-driven, nested blocks) with a structural inspector panel for story metadata. The app must faithfully round-trip the source Markdown so the file remains human-editable outside the app.
+
+---
+
+## Scope
+
+### In Scope (v1)
+- Open a local workspace folder and select a Markdown story map file
+- Render the story hierarchy as an interactive nested outliner
+- Edit story metadata through a side inspector panel
+- Search and filter stories
+- Generate REQ/PLAN/DONE documents from templates and link them into stories
+- Atomic file saves with backup
+- Detect external file changes and prompt reload
+
+### Out of Scope (v1)
+- Multi-user collaboration or cloud sync
+- Git commit/push/branch management
+- Full Logseq graph database or cross-file backlinks
+- Kanban board view as primary editor
+
+---
+
+## Data Model
+
+The source of truth is a single Markdown file (e.g., `user-story-map.md`).
+
+### Hierarchy
+```
+User Story Map
+└── Activity
+    └── Task
+        └── Story
+```
+
+### Story Fields
+Each story carries:
+| Field | Values / Format |
+|-------|----------------|
+| `title` | Free text |
+| `status` | `todo \| doing \| done` |
+| `slug` | `a-z0-9-`, unique across all stories |
+| `notes` | Free text (multiline) |
+| `doc refs` | One or more: `{ type: REQ\|PLAN\|DONE, date: YYYY-MM-DD, filename: string }` |
+
+### Markdown Encoding (two supported forms)
+- **Form A — Inline properties:** `key:: value` (Logseq-style)
+  ```
+  status:: doing
+  slug:: user-login
+  req:: 2026-02-25/req-user-login.md
+  ```
+- **Form B — Legacy/existing patterns:** `status:`, `slug:`, doc lines as found in pre-existing files
+
+A **Format Mode** setting controls behavior on save:
+- `Preserve Existing` (default): retain original style/layout
+- `Normalize to Properties`: rewrite all stories to Form A
+
+---
+
+## Functional Requirements
+
+### FR-1: File Management
+- **FR-1.1** Open a workspace folder from the OS file dialog
+- **FR-1.2** Choose which Markdown file is the active story map
+- **FR-1.3** Parse the chosen file and render the story hierarchy
+- **FR-1.4** Save changes atomically (write to temp file, then rename)
+- **FR-1.5** Create a `.bak` backup on each save (configurable on/off)
+- **FR-1.6** Detect external file modifications; prompt the user to reload
+- **FR-1.7** Never leave the file in a corrupted or partially-written state
+
+### FR-2: Outliner Editing
+- **FR-2.1** Display stories in a nested outline: Activity → Task → Story
+- **FR-2.2** Each story line shows inline chips: status pill, slug, and doc-ref chips (REQ/PLAN/DONE)
+- **FR-2.3** Create a new sibling block with **Enter**
+- **FR-2.4** Indent (re-parent as child) with **Tab**; outdent with **Shift+Tab**
+- **FR-2.5** Drag and drop to reorder blocks within the same parent
+- **FR-2.6** Move blocks across tasks or activities
+- **FR-2.7** Delete blocks (with confirmation when block has children)
+- **FR-2.8** Undo/redo for all outliner edits (in-session; persistent undo is post-v1)
+
+### FR-3: Inspector Panel
+- **FR-3.1** Opens when a Story block is selected (right-side panel)
+- **FR-3.2** Editable fields: Title, Status (dropdown), Slug, Notes (multiline)
+- **FR-3.3** Slug validation: unique across all stories; characters restricted to `a-z0-9-`
+- **FR-3.4** Doc refs list: add, edit, remove; each entry shows type/date/filename
+- **FR-3.5** Open a linked doc in the system default editor or internal viewer
+- **FR-3.6** Copy a doc ref path to clipboard
+- **FR-3.7** Inspector actions: Mark Done, Move (task/activity picker), Duplicate, Copy as Markdown block
+
+### FR-4: Search and Filters
+- **FR-4.1** Full-text search across title, slug, notes, and doc filenames
+- **FR-4.2** Filter by status (multi-select: todo / doing / done)
+- **FR-4.3** Filter by doc coverage: none / has REQ / has PLAN / has DONE
+- **FR-4.4** Filter to show only tasks with unfinished stories
+- **FR-4.5** Save and recall named filter presets
+- **FR-4.6** Built-in saved queries: "Doing", "No Docs", "Touched Recently", "By Status"
+
+### FR-5: Zoom / Focus Mode
+- **FR-5.1** Clicking an Activity or Task enters a focused view showing only its children
+- **FR-5.2** Focused view displays a progress summary: counts by status and percent done
+- **FR-5.3** Focused view shows a doc-coverage summary (has docs / missing docs)
+- **FR-5.4** Focused view lists aggregated doc refs (all refs under the focused node), clickable
+
+### FR-6: Doc Template Workflow
+- **FR-6.1** "Create REQ/PLAN/DONE doc" action available from the Inspector
+- **FR-6.2** Generated filename format: `{type}-{slug}.md` (e.g., `req-user-login.md`)
+- **FR-6.3** File is placed under `{today's-date}/` folder by default (configurable)
+- **FR-6.4** After creation the doc ref is automatically inserted into the story
+- **FR-6.5** Templates are user-configurable (plain Markdown template files)
+
+### FR-6b: Format Mode Setting
+- **FR-6b.1** A user-accessible "Format Mode" setting controls how stories are serialized on save
+- **FR-6b.2** `Preserve Existing` (default): retain the original Markdown style/layout as closely as possible; minimize diff churn
+- **FR-6b.3** `Normalize to Properties`: rewrite all story fields to Form A (`key:: value`) on save
+- **FR-6b.4** The setting is persisted across sessions
+
+### FR-7: Progress Metrics
+- **FR-7.1** Activity and Task nodes display status counts (todo / doing / done) inline
+- **FR-7.2** Percent-done indicator visible on Activity and Task nodes
+- **FR-7.3** Query views for "Doing" and "No Docs" render as grouped outlines (not cards)
+
+---
+
+## Non-Functional Requirements
+
+| ID | Requirement |
+|----|-------------|
+| NFR-1 | Interaction latency < 50 ms for typical edits (target file size: 2k–10k blocks) |
+| NFR-2 | Never corrupt the markdown file; always recoverable via backup |
+| NFR-3 | Runs on macOS, Windows, and Linux |
+| NFR-4 | Fully offline; no network connection required |
+| NFR-5 | Keyboard-first navigation throughout; all core actions reachable without a mouse |
+
+---
+
+## UI Layout
+
+```
+┌────────────┬──────────────────────────┬─────────────────┐
+│  Sidebar   │        Outliner          │   Inspector     │
+│            │                          │   (story sel.)  │
+│ - Pages    │  ▶ Activity              │                 │
+│ - Queries  │    ▶ Task                │  Title: ______  │
+│            │      • Story [doing]     │  Status: doing  │
+│            │        slug: foo         │  Slug: foo      │
+│            │      • Story [todo]      │  Docs: ...      │
+│            │                          │  Notes: ______  │
+└────────────┴──────────────────────────┴─────────────────┘
+```
+
+- **Left sidebar:** page list + saved query links
+- **Center outliner:** nested Activity → Task → Story blocks with inline chips
+- **Right inspector:** structured fields for selected Story block
+
+---
+
+## Acceptance Criteria
+
+| # | Criterion |
+|---|-----------|
+| AC-1 | Open `user-story-map.md` and correctly render Activities, Tasks, and Stories |
+| AC-2 | Edit story status/slug/doc refs via Inspector, save, and the Markdown remains human-readable and structurally consistent |
+| AC-3 | Indent/outdent and drag-drop correctly move stories between tasks; saved file reflects new structure |
+| AC-4 | Search and filter by status and "missing docs" return correct results |
+| AC-5 | Create a REQ or PLAN doc from template; link is automatically added to the story |
+| AC-6 | Atomic saves + backup guarantee the file is never corrupted, even on an unclean shutdown |
+
+---
+
+## Success Metrics
+
+| Metric | Target |
+|--------|--------|
+| Time to update a story (status + doc link) | < 10 seconds (keyboard-first path) |
+| Saves producing unwanted large diffs | < 5% (user-reported) |
+| File corruption incidents | Zero |
+| User adoption over manual Markdown editing | ≥ 70% of active sessions (self-reported) |
+
+---
+
+## Open Questions
+
+1. Single canonical Markdown format on save, or default to "Preserve Existing" (already recommended in PRD)?
+2. Embed a minimal Markdown viewer for linked docs inside the app, or always delegate to the system editor?
+3. Persistent undo history (across sessions) or in-session only for v1?
