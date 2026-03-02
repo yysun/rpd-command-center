@@ -12,7 +12,7 @@
     "dev": "npm-run-all --sequential main:build --parallel main:watch renderer:dev electron:dev",
     "build": "npm run main:build && npm run renderer:build",
     "start": "npm run build && electron .",
-    "test": "vitest run"
+    "test": "vitest run --config vitest.config.mts"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.1.4",

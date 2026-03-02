@@ -16,6 +16,7 @@ export interface Story {
   status: Status
   slug: string
   notes: string
+  unknownProps: string[]
   order: number
   updatedAt: number // ms timestamp; set on every mutation
   docRefs: DocRef[]
@@ -25,6 +26,7 @@ export interface Task {
   id: string
   activityId: string
   title: string
+  rawLine: string
   order: number
   stories: Story[]
 }
@@ -32,6 +34,7 @@ export interface Task {
 export interface Activity {
   id: string
   title: string
+  rawLine: string
   order: number
   tasks: Task[]
 }

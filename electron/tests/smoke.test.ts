@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
+import { parse } from 'core'
 
 // Mock the electron preload environment
 const mockInvoke = vi.fn(async (channel: string) => {
@@ -24,5 +25,12 @@ describe('window.api shape', () => {
   it('only exposes expected keys (no raw ipcRenderer)', () => {
     const keys = Object.keys(api)
     expect(keys).toEqual(['ping'])
+  })
+})
+
+describe('core workspace import', () => {
+  it('imports parse from core and executes', () => {
+    const map = parse('# User Story Map\n\n- A #activity\n')
+    expect(map.activities.length).toBe(1)
   })
 })

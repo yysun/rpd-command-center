@@ -7,43 +7,43 @@
       slug:: define-requirements
       - 2026-03-02 → req-story-map-manager.md
     - Scaffold monorepo and core package #story
-      status:: todo
+      status:: done
       slug:: scaffold-core-package
     - Configure core build toolchain #story
-      status:: todo
+      status:: done
       slug:: configure-core-build
   - Data Model & Types #task
     - Define Activity / Task / Story type hierarchy #story
-      status:: todo
+      status:: done
       slug:: define-type-hierarchy
     - Define Story fields schema (status, slug, notes, doc refs) #story
-      status:: todo
+      status:: done
       slug:: define-story-fields-schema
   - Parser #task
     - Parse markdown outline into internal model #story
-      status:: todo
+      status:: done
       slug:: parse-markdown-to-model
     - Parse Form A inline properties (key:: value) #story
-      status:: todo
+      status:: done
       slug:: parse-form-a-properties
     - Parse Form B legacy property patterns #story
-      status:: todo
+      status:: done
       slug:: parse-form-b-legacy
     - Round-trip fidelity tests #story
-      status:: todo
+      status:: done
       slug:: parser-round-trip-tests
   - Serializer #task
     - Serialize model to Markdown (Preserve Existing mode) #story
-      status:: todo
+      status:: done
       slug:: serialize-preserve-existing
     - Serialize model to Markdown (Normalize mode) #story
-      status:: todo
+      status:: done
       slug:: serialize-normalize
     - Atomic write (write-temp + rename) #story
-      status:: todo
+      status:: done
       slug:: atomic-save
     - Create .bak backup on save #story
-      status:: todo
+      status:: done
       slug:: backup-on-save
 
 - Core: File & Workspace #activity

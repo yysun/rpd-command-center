@@ -9,7 +9,7 @@ export default defineConfig({
       fileName: (fmt) => `index.${fmt === 'es' ? 'mjs' : 'cjs'}`,
     },
     rollupOptions: {
-      external: [],
+      external: [/^node:/],
     },
   },
 })
