@@ -80,6 +80,29 @@ function setCaretAndSelectBlock(el: HTMLElement, offset: number) {
   el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
 }
 
+function readCaretOffsetWithin(el: HTMLElement): number {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0) return -1
+  const range = selection.getRangeAt(0)
+  if (!el.contains(range.startContainer)) return -1
+
+  const measurement = range.cloneRange()
+  measurement.selectNodeContents(el)
+  measurement.setEnd(range.startContainer, range.startOffset)
+  return measurement.toString().length
+}
+
+function activeSelectionBlockId(): string | null {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0) return null
+  const anchor = selection.anchorNode
+  if (!anchor) return null
+  const origin = anchor.nodeType === Node.ELEMENT_NODE ? (anchor as HTMLElement) : anchor.parentElement
+  if (!origin) return null
+  const block = origin.closest('.block-content')
+  return block instanceof HTMLElement ? block.id : null
+}
+
 describe('editor boundary behavior', () => {
   it('commits text edits on keyup for non-structural keys', () => {
     const view = mount()
@@ -173,5 +196,80 @@ describe('editor boundary behavior', () => {
 
     act(() => root.unmount())
     container.remove()
+  })
+
+  it('keeps outliner selection after keyup causes parent update', () => {
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+    const root = ReactDOM.createRoot(container)
+
+    function Harness() {
+      const [pages, setPages] = React.useState<OutlinerPage[]>(createPages())
+      const [sidebarRenders, setSidebarRenders] = React.useState(0)
+
+      return (
+        <div>
+          <div data-testid="sidebar-renders">{sidebarRenders}</div>
+          <OutlinerLanes
+            pages={pages}
+            onPagesChange={(nextPages) => {
+              setPages(nextPages)
+              setSidebarRenders((count) => count + 1)
+            }}
+            onBlockFocus={vi.fn()}
+            onUndo={vi.fn()}
+            onRedo={vi.fn()}
+            canUndo
+            canRedo
+          />
+        </div>
+      )
+    }
+
+    act(() => {
+      root.render(<Harness />)
+    })
+
+    const task = container.querySelector('#task\\:t1') as HTMLElement
+    setCaretAndSelectBlock(task, 2)
+
+    act(() => {
+      task.textContent = 'Task 1 updated'
+      task.dispatchEvent(new KeyboardEvent('keyup', { key: 'd', bubbles: true }))
+    })
+
+    expect(container.querySelector('[data-testid="sidebar-renders"]')?.textContent).toBe('1')
+    expect(activeSelectionBlockId()).toBe('task:t1')
+    expect(readCaretOffsetWithin(task)).toBeGreaterThanOrEqual(0)
+
+    act(() => root.unmount())
+    container.remove()
+  })
+
+  it('keeps caret on new line after Enter followed by immediate typing', () => {
+    const view = mount()
+    const firstTask = view.container.querySelector('#task\\:t1') as HTMLElement
+    setCaretAndSelectBlock(firstTask, firstTask.textContent?.length ?? 0)
+
+    act(() => {
+      firstTask.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    })
+
+    const afterSplit = view.onPagesChange.mock.calls.at(-1)?.[0] as OutlinerPage[]
+    const newBlockId = afterSplit[0]?.blocks[1]?.id
+    expect(newBlockId).toBeTruthy()
+
+    const newBlock = view.container.ownerDocument.getElementById(newBlockId!) as HTMLElement
+    expect(newBlock).toBeTruthy()
+    expect(activeSelectionBlockId()).toBe(newBlockId)
+
+    act(() => {
+      newBlock.textContent = 'x'
+      newBlock.dispatchEvent(new KeyboardEvent('keyup', { key: 'x', bubbles: true }))
+    })
+
+    expect(activeSelectionBlockId()).toBe(newBlockId)
+    expect(readCaretOffsetWithin(newBlock)).toBeGreaterThanOrEqual(0)
+    view.cleanup()
   })
 })

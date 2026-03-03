@@ -149,6 +149,35 @@ describe('keyboard shortcuts and editor interactions', () => {
     view.cleanup()
   })
 
+  it('Enter at parent end then typing creates a new top-level sibling', () => {
+    const view = mount()
+    const first = view.container.querySelector('#task\\:t1') as HTMLElement
+    setCaretAndSelectBlock(first, first.textContent?.length ?? 0)
+
+    act(() => {
+      first.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    })
+
+    const afterSplit = view.onPagesChange.mock.calls.at(-1)?.[0] as OutlinerPage[]
+    const siblingId = afterSplit[0]?.blocks[1]?.id
+    expect(siblingId).toBeTruthy()
+    expect(afterSplit[0]?.blocks[0]?.children.map((child) => child.id)).toEqual(['story:s1'])
+
+    const sibling = view.container.ownerDocument.getElementById(siblingId!) as HTMLElement
+    expect(sibling).toBeTruthy()
+    sibling.textContent = 'tree2'
+    setCaretAndSelectBlock(sibling, 'tree2'.length)
+
+    act(() => {
+      sibling.dispatchEvent(new KeyboardEvent('keyup', { key: '2', bubbles: true }))
+    })
+
+    const afterType = view.onPagesChange.mock.calls.at(-1)?.[0] as OutlinerPage[]
+    expect(afterType[0]?.blocks[1]?.content).toBe('tree2')
+    expect(afterType[0]?.blocks[0]?.children.map((child) => child.id)).toEqual(['story:s1'])
+    view.cleanup()
+  })
+
   it('splits at start of line and keeps original text in new sibling', () => {
     const view = mount()
     const first = view.container.querySelector('#task\\:t1') as HTMLElement
@@ -164,7 +193,7 @@ describe('keyboard shortcuts and editor interactions', () => {
     view.cleanup()
   })
 
-  it('indents with Tab and allows Shift+Tab no-op at page root boundary', () => {
+  it('indents with Tab and allows Shift+Tab to break top-level block into a new page', () => {
     const view = mount()
     const secondTask = view.container.querySelector('#task\\:t2') as HTMLElement
     setCaretAndSelectBlock(secondTask, 0)
@@ -174,7 +203,12 @@ describe('keyboard shortcuts and editor interactions', () => {
       secondTask.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
     })
 
-    expect(view.onPagesChange).toHaveBeenCalledTimes(1)
+    expect(view.onPagesChange).toHaveBeenCalledTimes(2)
+    const pagesAfterBreakout = view.onPagesChange.mock.calls.at(-1)?.[0] as OutlinerPage[]
+    expect(pagesAfterBreakout).toHaveLength(2)
+    expect(pagesAfterBreakout[0]?.blocks.map((block) => block.id)).toEqual(['task:t1'])
+    expect(pagesAfterBreakout[1]?.title).toBe('Task 2')
+    expect(pagesAfterBreakout[1]?.blocks.map((block) => block.id)).toEqual(['story:s2'])
     view.cleanup()
   })
 
@@ -191,6 +225,58 @@ describe('keyboard shortcuts and editor interactions', () => {
     expect(nextPages[0].blocks.map((block) => block.id)).toEqual(['task:t1'])
     expect(nextPages[0].blocks[0]?.children[0]?.content).toBe('Story 1Task 2')
     expect(nextPages[0].blocks[0]?.children[0]?.children.map((child) => child.id)).toEqual(['story:s2'])
+    view.cleanup()
+  })
+
+  it('Backspace at start of page-level block merges into previous page leaf', () => {
+    const pages = seedPages()
+    const view = mount(pages)
+
+    const secondTask = view.container.querySelector('#task\\:t2') as HTMLElement
+    setCaretAndSelectBlock(secondTask, 0)
+
+    act(() => {
+      secondTask.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+    })
+
+    const movedStory = view.container.querySelector('#story\\:s2') as HTMLElement
+    setCaretAndSelectBlock(movedStory, 0)
+
+    act(() => {
+      movedStory.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }))
+    })
+
+    const nextPages = view.onPagesChange.mock.calls.at(-1)?.[0] as OutlinerPage[]
+    expect(nextPages).toHaveLength(2)
+    expect(nextPages[0]?.blocks[0]?.children[0]?.content).toBe('Story 1Story 2')
+    expect(nextPages[1]?.blocks).toEqual([])
+    view.cleanup()
+  })
+
+  it('Backspace at page-level first char merges into previous top-level line', () => {
+    const view = mount()
+
+    const firstStory = view.container.querySelector('#story\\:s1') as HTMLElement
+    setCaretAndSelectBlock(firstStory, 0)
+    act(() => {
+      firstStory.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+    })
+
+    const secondTask = view.container.querySelector('#task\\:t2') as HTMLElement
+    setCaretAndSelectBlock(secondTask, 0)
+    act(() => {
+      secondTask.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+    })
+
+    const movedStory = view.container.querySelector('#story\\:s2') as HTMLElement
+    setCaretAndSelectBlock(movedStory, 0)
+    act(() => {
+      movedStory.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true }))
+    })
+
+    const nextPages = view.onPagesChange.mock.calls.at(-1)?.[0] as OutlinerPage[]
+    expect(nextPages[0]?.blocks.map((block) => block.id)).toEqual(['task:t1', 'story:s1'])
+    expect(nextPages[0]?.blocks[1]?.content).toBe('Story 1Story 2')
     view.cleanup()
   })
 
@@ -236,13 +322,181 @@ describe('keyboard shortcuts and editor interactions', () => {
     view.cleanup()
   })
 
-  it('cleans temporary caret marker after no-op outdent on top-level block', () => {
+  it('Tab on first page-level block indents under previous top-level line', () => {
     const view = mount()
-    const firstTask = view.container.querySelector('#task\\:t1') as HTMLElement
-    setCaretAndSelectBlock(firstTask, 0)
+
+    const firstStory = view.container.querySelector('#story\\:s1') as HTMLElement
+    setCaretAndSelectBlock(firstStory, 0)
+    act(() => {
+      firstStory.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+    })
+
+    const secondTask = view.container.querySelector('#task\\:t2') as HTMLElement
+    setCaretAndSelectBlock(secondTask, 0)
+    act(() => {
+      secondTask.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+    })
+
+    const movedStory = view.container.querySelector('#story\\:s2') as HTMLElement
+    setCaretAndSelectBlock(movedStory, 0)
+    act(() => {
+      movedStory.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }))
+    })
+
+    const nextPages = view.onPagesChange.mock.calls.at(-1)?.[0] as OutlinerPage[]
+    expect(nextPages[0]?.blocks.map((block) => block.id)).toEqual(['task:t1', 'story:s1'])
+    expect(nextPages[0]?.blocks[1]?.children.map((child) => child.id)).toEqual(['story:s2'])
+    view.cleanup()
+  })
+
+  it('newly broken-out item retains content when indented then unindented', () => {
+    const view = mount()
+
+    const secondTask = view.container.querySelector('#task\\:t2') as HTMLElement
+    setCaretAndSelectBlock(secondTask, 0)
+    act(() => {
+      secondTask.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+    })
+
+    const movedStory = view.container.querySelector('#story\\:s2') as HTMLElement
+    expect(movedStory.textContent).toBe('Story 2')
+
+    const page2Title = Array.from(view.container.querySelectorAll('.block-content')).find((el) => (el as HTMLElement).id !== 'page:a1' && (el as HTMLElement).id.startsWith('page:')) as HTMLElement
+    expect(page2Title.textContent).toBe('Task 2')
+
+    setCaretAndSelectBlock(page2Title, 0)
+    act(() => {
+      page2Title.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true }))
+    })
+
+    let nextPages = view.onPagesChange.mock.calls.at(-1)?.[0] as OutlinerPage[]
+    const demoted = nextPages[0]?.blocks.find((block) => block.content === 'Task 2')
+    expect(demoted?.content).toBe('Task 2')
+    expect(demoted?.children.map((child) => child.id)).toEqual(['story:s2'])
+    expect(demoted?.children[0]?.content).toBe('Story 2')
+
+    const demotedNode = view.container.ownerDocument.getElementById(demoted!.id) as HTMLElement
+    setCaretAndSelectBlock(demotedNode, 0)
+    act(() => {
+      demotedNode.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+    })
+
+    nextPages = view.onPagesChange.mock.calls.at(-1)?.[0] as OutlinerPage[]
+    expect(nextPages[1]?.title).toBe('Task 2')
+    expect(nextPages[1]?.blocks.map((block) => block.id)).toEqual(['story:s2'])
+    expect(nextPages[1]?.blocks[0]?.content).toBe('Story 2')
+    view.cleanup()
+  })
+
+  it('Shift+Tab outdents a nested child to top-level', () => {
+    const view = mount()
+    const firstStory = view.container.querySelector('#story\\:s1') as HTMLElement
+    setCaretAndSelectBlock(firstStory, 0)
 
     act(() => {
-      firstTask.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+      firstStory.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+    })
+
+    const nextPages = view.onPagesChange.mock.calls.at(-1)?.[0] as OutlinerPage[]
+    expect(nextPages[0].blocks.map((block) => block.id)).toEqual(['task:t1', 'story:s1', 'task:t2'])
+    expect(nextPages[0].blocks[0]?.children).toEqual([])
+    view.cleanup()
+  })
+
+  it('Enter on empty nested block breaks out to top-level instead of splitting nested siblings', () => {
+    const view = mount()
+    const firstStory = view.container.querySelector('#story\\:s1') as HTMLElement
+    firstStory.textContent = ''
+    setCaretAndSelectBlock(firstStory, 0)
+
+    act(() => {
+      firstStory.dispatchEvent(new KeyboardEvent('keyup', { key: 'x', bubbles: true }))
+      firstStory.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    })
+
+    const nextPages = view.onPagesChange.mock.calls.at(-1)?.[0] as OutlinerPage[]
+    expect(nextPages[0].blocks.map((block) => block.id)).toEqual(['task:t1', 'story:s1', 'task:t2'])
+    expect(nextPages[0].blocks[0]?.children).toEqual([])
+    view.cleanup()
+  })
+
+  it('Shift+Tab on empty nested block breaks out to top-level', () => {
+    const view = mount()
+    const firstStory = view.container.querySelector('#story\\:s1') as HTMLElement
+    firstStory.textContent = ''
+    setCaretAndSelectBlock(firstStory, 0)
+
+    act(() => {
+      firstStory.dispatchEvent(new KeyboardEvent('keyup', { key: 'x', bubbles: true }))
+      firstStory.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+    })
+
+    const nextPages = view.onPagesChange.mock.calls.at(-1)?.[0] as OutlinerPage[]
+    expect(nextPages[0].blocks.map((block) => block.id)).toEqual(['task:t1', 'story:s1', 'task:t2'])
+    expect(nextPages[0].blocks[0]?.children).toEqual([])
+    view.cleanup()
+  })
+
+  it('Enter on empty top-level block promotes it into a new page root', () => {
+    const pages = seedPages()
+    pages[0]!.blocks[1]!.children[0]!.content = ''
+    const view = mount(pages)
+    const story = view.container.querySelector('#story\\:s2') as HTMLElement
+    setCaretAndSelectBlock(story, 0)
+
+    act(() => {
+      story.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+    })
+
+    const updatedTopLevelLeaf = view.container.querySelector('#story\\:s2') as HTMLElement
+    setCaretAndSelectBlock(updatedTopLevelLeaf, 0)
+
+    act(() => {
+      updatedTopLevelLeaf.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    })
+
+    const nextPages = view.onPagesChange.mock.calls.at(-1)?.[0] as OutlinerPage[]
+    expect(nextPages).toHaveLength(2)
+    expect(nextPages[0]?.blocks.map((block) => block.id)).toEqual(['task:t1', 'task:t2'])
+    expect(nextPages[1]?.title).toBe('')
+    expect(nextPages[1]?.blocks).toEqual([])
+    view.cleanup()
+  })
+
+  it('Enter on child then Shift+Tab creates and promotes a new top-level block', () => {
+    const view = mount()
+    const story = view.container.querySelector('#story\\:s1') as HTMLElement
+    setCaretAndSelectBlock(story, story.textContent?.length ?? 0)
+
+    act(() => {
+      story.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
+    })
+
+    const afterSplit = view.onPagesChange.mock.calls.at(-1)?.[0] as OutlinerPage[]
+    const newChildId = afterSplit[0]?.blocks[0]?.children[1]?.id
+    expect(newChildId).toBeTruthy()
+
+    const newChild = view.container.ownerDocument.getElementById(newChildId!) as HTMLElement
+    expect(newChild).toBeTruthy()
+    setCaretAndSelectBlock(newChild, 0)
+
+    act(() => {
+      newChild.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+    })
+
+    const afterOutdent = view.onPagesChange.mock.calls.at(-1)?.[0] as OutlinerPage[]
+    expect(afterOutdent[0]?.blocks.map((block) => block.id)).toEqual(['task:t1', newChildId!, 'task:t2'])
+    expect(afterOutdent[0]?.blocks[0]?.children.map((child) => child.id)).toEqual(['story:s1'])
+    view.cleanup()
+  })
+
+  it('cleans temporary caret marker after no-op outdent on page root block', () => {
+    const view = mount()
+    const pageRoot = view.container.querySelector('#page\\:a1') as HTMLElement
+    setCaretAndSelectBlock(pageRoot, 0)
+
+    act(() => {
+      pageRoot.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
     })
 
     expect(view.onPagesChange).not.toHaveBeenCalled()
@@ -250,21 +504,21 @@ describe('keyboard shortcuts and editor interactions', () => {
     view.cleanup()
   })
 
-  it('keeps caret stable after repeated no-op structural key presses', () => {
+  it('keeps caret stable after repeated no-op structural key presses on page root', () => {
     const view = mount()
-    const firstTask = view.container.querySelector('#task\\:t1') as HTMLElement
-    setCaretAndSelectBlock(firstTask, 0)
+    const pageRoot = view.container.querySelector('#page\\:a1') as HTMLElement
+    setCaretAndSelectBlock(pageRoot, 0)
 
     act(() => {
       for (let i = 0; i < 10; i += 1) {
-        firstTask.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
-        firstTask.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', altKey: true, bubbles: true }))
+        pageRoot.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true }))
+        pageRoot.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', altKey: true, bubbles: true }))
       }
     })
 
     const selection = window.getSelection()
     expect(selection?.anchorNode).not.toBeNull()
-    expect(firstTask.contains(selection?.anchorNode ?? null)).toBe(true)
+    expect(pageRoot.contains(selection?.anchorNode ?? null)).toBe(true)
     expect(view.container.querySelector('#__caret')).toBeNull()
     view.cleanup()
   })

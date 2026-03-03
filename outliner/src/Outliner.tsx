@@ -1,4 +1,4 @@
-import { type KeyboardEvent as ReactKeyboardEvent, type RefObject, useEffect, useMemo, useRef, useState } from 'react'
+import { type KeyboardEvent as ReactKeyboardEvent, type RefObject, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { OutlinerBlock, OutlinerPage, OutlinerProps } from './types'
 
 type Block = {
@@ -23,6 +23,11 @@ type MutationResult = {
   focusId?: string
   placeCaretAtStart?: boolean
   caretOffset?: number
+}
+
+type CaretSnapshot = {
+  blockId: string
+  offset: number
 }
 
 const CARET_ID = '__caret'
@@ -69,7 +74,7 @@ function blocksToPages(blocks: Block[]): OutlinerPage[] {
     .filter((block) => block.isPageRoot)
     .map((pageRoot) => ({
       id: pageRoot.pageId ?? pageRoot.id.replace(/^page:/, ''),
-      title: pageRoot.content.trim() || '(untitled page)',
+      title: pageRoot.content,
       blocks: pageRoot.children.map(toOutlinerBlock),
     }))
 }
@@ -100,6 +105,21 @@ function findNextBlock(blocks: Block[], id: string): string | null {
   const index = ids.indexOf(id)
   if (index < 0 || index >= ids.length - 1) return null
   return ids[index + 1]
+}
+
+function findPrevNonPageBlock(blocks: Block[], id: string): string | null {
+  const ids = flattenBlockIds(blocks)
+  const index = ids.indexOf(id)
+  if (index <= 0) return null
+
+  for (let i = index - 1; i >= 0; i -= 1) {
+    const candidateId = ids[i]
+    if (!candidateId) continue
+    const location = findBlockLocation(blocks, candidateId)
+    if (location && !location.block.isPageRoot) return candidateId
+  }
+
+  return null
 }
 
 function compareBlockOrder(blocks: Block[], a: string, b: string): number {
@@ -163,9 +183,21 @@ function splitBlock(blocks: Block[], id: string, before: string, after: string, 
 function mergeBlock(blocks: Block[], id: string): MutationResult {
   const draft = cloneBlocks(blocks)
   const location = findBlockLocation(draft, id)
-  if (!location || location.block.isPageRoot) return { blocks }
+  if (!location) return { blocks }
 
-  const prevId = findPrevBlock(draft, id)
+  if (location.block.isPageRoot) {
+    if (location.index === 0) return { blocks }
+    const previous = location.siblings[location.index - 1]
+    if (!previous || !previous.isPageRoot) return { blocks }
+
+    const caretOffset = previous.content.length
+    previous.content = `${previous.content}${location.block.content}`
+    previous.children.push(...location.block.children)
+    location.siblings.splice(location.index, 1)
+    return { blocks: draft, focusId: previous.id, placeCaretAtStart: false, caretOffset }
+  }
+
+  const prevId = findPrevNonPageBlock(draft, id)
   if (!prevId) return { blocks }
 
   const prev = findBlockLocation(draft, prevId)
@@ -181,13 +213,48 @@ function mergeBlock(blocks: Block[], id: string): MutationResult {
 function indentBlock(blocks: Block[], id: string): MutationResult {
   const draft = cloneBlocks(blocks)
   const location = findBlockLocation(draft, id)
-  if (!location || location.index === 0 || location.block.isPageRoot) return { blocks }
+  if (!location || location.block.isPageRoot) return { blocks }
+
+  if (location.index === 0) {
+    if (!location.parent?.isPageRoot) return { blocks }
+    const prevId = findPrevNonPageBlock(draft, id)
+    if (!prevId) return { blocks }
+
+    const prev = findBlockLocation(draft, prevId)
+    if (!prev || prev.block.isPageRoot) return { blocks }
+
+    const [node] = location.siblings.splice(location.index, 1)
+    if (!node) return { blocks }
+    prev.block.children.push(node)
+    return { blocks: draft, focusId: node.id, placeCaretAtStart: false }
+  }
 
   const previous = location.siblings[location.index - 1]
   const [node] = location.siblings.splice(location.index, 1)
   if (!node) return { blocks }
   previous.children.push(node)
   return { blocks: draft, focusId: node.id, placeCaretAtStart: false }
+}
+
+function indentPageRoot(blocks: Block[], id: string): MutationResult {
+  const draft = cloneBlocks(blocks)
+  const location = findBlockLocation(draft, id)
+  if (!location || !location.block.isPageRoot || location.index === 0) return { blocks }
+
+  const previous = location.siblings[location.index - 1]
+  if (!previous || !previous.isPageRoot) return { blocks }
+
+  const [node] = location.siblings.splice(location.index, 1)
+  if (!node) return { blocks }
+
+  const demoted: Block = {
+    id: node.id,
+    content: node.content,
+    children: node.children,
+  }
+
+  previous.children.push(demoted)
+  return { blocks: draft, focusId: demoted.id, placeCaretAtStart: false }
 }
 
 function outdentBlock(blocks: Block[], id: string): MutationResult {
@@ -200,6 +267,28 @@ function outdentBlock(blocks: Block[], id: string): MutationResult {
   if (!node) return { blocks }
   location.parentSiblings.splice(location.parentIndex + 1, 0, node)
   return { blocks: draft, focusId: node.id, placeCaretAtStart: false }
+}
+
+function promoteBlockToNewPage(blocks: Block[], id: string, idFactory: () => string): MutationResult {
+  const draft = cloneBlocks(blocks)
+  const location = findBlockLocation(draft, id)
+  if (!location || location.block.isPageRoot || !location.parent || !location.parentSiblings || location.parentIndex === undefined) return { blocks }
+  if (!location.parent.isPageRoot) return { blocks }
+
+  const [node] = location.siblings.splice(location.index, 1)
+  if (!node) return { blocks }
+
+  const pageId = idFactory()
+  const newPage: Block = {
+    id: `page:${pageId}`,
+    pageId,
+    isPageRoot: true,
+    content: node.content,
+    children: node.children,
+  }
+
+  location.parentSiblings.splice(location.parentIndex + 1, 0, newPage)
+  return { blocks: draft, focusId: newPage.children[0]?.id ?? newPage.id, placeCaretAtStart: false }
 }
 
 function moveBlockUp(blocks: Block[], id: string): MutationResult {
@@ -308,6 +397,11 @@ function restoreCaret(el: HTMLElement): boolean {
   selection.addRange(range)
   marker.remove()
   return true
+}
+
+function clearSavedCaret(el: HTMLElement): void {
+  const marker = el.querySelector(`#${CARET_ID}`)
+  if (marker instanceof HTMLElement) marker.remove()
 }
 
 function createCaret(el: HTMLElement, toStart = false): void {
@@ -705,6 +799,32 @@ function OutlinerEditor({ blocks, collapsed, editorRef, onBlocksChange, onBlocks
     }
 
     if (event.key === 'Enter' && !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const trimmed = (contentElement.textContent ?? '').trim()
+      const location = findBlockLocation(blocks, blockId)
+      const shouldPromoteToNewPageOnEmptyTopLevel =
+        trimmed.length === 0 &&
+        Boolean(location?.parent?.isPageRoot) &&
+        (location?.block.children.length ?? 0) === 0
+      const shouldBreakOutOnEmpty =
+        trimmed.length === 0 &&
+        Boolean(location?.parent) &&
+        !Boolean(location?.parent?.isPageRoot) &&
+        (location?.block.children.length ?? 0) === 0
+
+      if (shouldPromoteToNewPageOnEmptyTopLevel) {
+        event.preventDefault()
+        saveCaret(editorElement)
+        onBlocksMutate(promoteBlockToNewPage(blocks, blockId, createId))
+        return
+      }
+
+      if (shouldBreakOutOnEmpty) {
+        event.preventDefault()
+        saveCaret(editorElement)
+        onBlocksMutate(outdentBlock(blocks, blockId))
+        return
+      }
+
       event.preventDefault()
       const [before, after] = splitElement(contentElement)
       saveCaret(editorElement)
@@ -747,8 +867,16 @@ function OutlinerEditor({ blocks, collapsed, editorRef, onBlocksChange, onBlocks
     if (event.key === 'Tab') {
       event.preventDefault()
       saveCaret(editorElement)
-      if (event.shiftKey) onBlocksMutate(outdentBlock(blocks, blockId))
-      else onBlocksMutate(indentBlock(blocks, blockId))
+      if (event.shiftKey) {
+        const location = findBlockLocation(blocks, blockId)
+        if (location?.parent?.isPageRoot) onBlocksMutate(promoteBlockToNewPage(blocks, blockId, createId))
+        else onBlocksMutate(outdentBlock(blocks, blockId))
+      }
+      else {
+        const location = findBlockLocation(blocks, blockId)
+        if (location?.block.isPageRoot) onBlocksMutate(indentPageRoot(blocks, blockId))
+        else onBlocksMutate(indentBlock(blocks, blockId))
+      }
       return
     }
 
@@ -810,7 +938,6 @@ function OutlinerEditor({ blocks, collapsed, editorRef, onBlocksChange, onBlocks
     const contentElement = target.closest('.block-content')
     if (!(contentElement instanceof HTMLElement)) return
 
-    saveCaret(editorElement)
     onBlocksChange(setBlockContent(blocks, contentElement.id, contentElement.textContent ?? ''), true, true)
     emitActiveBlockFocus(editorElement)
   }
@@ -839,6 +966,8 @@ export default function Outliner({ pages, onPagesChange, onBlockFocus, onUndo, o
   const editorRef = useRef<HTMLDivElement>(null)
   const idCounterRef = useRef(0)
   const selfCommittedPagesRef = useRef<string | null>(null)
+  const pendingMutationRef = useRef<MutationResult | null>(null)
+  const pendingCaretRestoreRef = useRef<CaretSnapshot | null>(null)
 
   function snapshotPages(input: OutlinerPage[]): string {
     return JSON.stringify(input)
@@ -860,12 +989,48 @@ export default function Outliner({ pages, onPagesChange, onBlockFocus, onUndo, o
     setCollapsed((previous) => new Set(Array.from(previous).filter((id) => blockIdSet.has(id))))
   }, [blockIdSet])
 
+  useLayoutEffect(() => {
+    const pending = pendingMutationRef.current
+    if (!pending) return
+
+    pendingMutationRef.current = null
+    const editorElement = editorRef.current
+    if (!editorElement) return
+
+    if (pending.focusId) {
+      const target = document.getElementById(pending.focusId)
+      if (target instanceof HTMLElement) {
+        // Structural edits may leave a marker behind in the previous block.
+        // Remove it before focusing the new block to avoid stale caret restores.
+        clearSavedCaret(editorElement)
+        editorElement.focus()
+        if (typeof pending.caretOffset === 'number') setCaretOffset(target, pending.caretOffset)
+        else createCaret(target, pending.placeCaretAtStart ?? false)
+        onBlockFocus?.(target.id)
+        return
+      }
+    }
+
+    restoreCaret(editorElement)
+  }, [blocks, onBlockFocus])
+
   function createId(): string {
     idCounterRef.current += 1
     return `block:${Date.now().toString(36)}:${idCounterRef.current.toString(36)}`
   }
 
   function commitBlocks(next: Block[], preserveCaret = false, skipLocalStateUpdate = false): void {
+    if (preserveCaret) {
+      const editorElement = editorRef.current
+      const activeContent = editorElement ? getActiveContentElement(editorElement) : null
+      pendingCaretRestoreRef.current = activeContent
+        ? {
+          blockId: activeContent.id,
+          offset: getCaretTextOffset(activeContent),
+        }
+        : null
+    }
+
     if (!skipLocalStateUpdate) {
       setBlocks(next)
     }
@@ -879,7 +1044,24 @@ export default function Outliner({ pages, onPagesChange, onBlockFocus, onUndo, o
     requestAnimationFrame(() => {
       const editorElement = editorRef.current
       if (!editorElement) return
-      restoreCaret(editorElement)
+      const pendingCaret = pendingCaretRestoreRef.current
+      pendingCaretRestoreRef.current = null
+
+      if (restoreCaret(editorElement)) return
+
+      const activeContent = getActiveContentElement(editorElement)
+      if (activeContent) {
+        onBlockFocus?.(activeContent.id)
+        return
+      }
+
+      if (!pendingCaret) return
+
+      const target = document.getElementById(pendingCaret.blockId)
+      if (!(target instanceof HTMLElement) || !editorElement.contains(target)) return
+      editorElement.focus()
+      setCaretOffset(target, pendingCaret.offset)
+      onBlockFocus?.(target.id)
     })
   }
 
@@ -890,26 +1072,11 @@ export default function Outliner({ pages, onPagesChange, onBlockFocus, onUndo, o
       return
     }
 
+    pendingMutationRef.current = result
     setBlocks(result.blocks)
-    onPagesChange(blocksToPages(result.blocks))
-
-    requestAnimationFrame(() => {
-      const editorElement = editorRef.current
-      if (!editorElement) return
-
-      if (result.focusId) {
-        const target = document.getElementById(result.focusId)
-        if (target instanceof HTMLElement) {
-          editorElement.focus()
-          if (typeof result.caretOffset === 'number') setCaretOffset(target, result.caretOffset)
-          else createCaret(target, result.placeCaretAtStart ?? false)
-          onBlockFocus?.(target.id)
-          return
-        }
-      }
-
-      restoreCaret(editorElement)
-    })
+    const nextPages = blocksToPages(result.blocks)
+    selfCommittedPagesRef.current = snapshotPages(nextPages)
+    onPagesChange(nextPages)
   }
 
   function toggleCollapse(id: string): void {
@@ -973,11 +1140,14 @@ export const __testing = {
   pagesToBlocks,
   blocksToPages,
   findPrevBlock,
+  findPrevNonPageBlock,
   findNextBlock,
   splitBlock,
   mergeBlock,
   indentBlock,
+  indentPageRoot,
   outdentBlock,
+  promoteBlockToNewPage,
   moveBlockUp,
   moveBlockDown,
   deleteBlock,

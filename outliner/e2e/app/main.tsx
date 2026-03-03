@@ -1,12 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import Outliner from '../../src'
 import '../../src/styles.css'
+import './e2e.css'
 import type { OutlinerPage } from '../../src'
 
 type E2EWindow = Window & {
   __outlinerE2E?: {
     setCaret: (blockId: string, offset: number) => boolean
+    setBlockContent: (blockId: string, content: string) => boolean
   }
 }
 
@@ -84,15 +86,61 @@ function flattenBlockIds(pages: OutlinerPage[]): string[] {
   return ids
 }
 
+function updateBlockContent(
+  blocks: OutlinerPage['0']['blocks'],
+  blockId: string,
+  content: string,
+): { blocks: OutlinerPage['0']['blocks']; updated: boolean } {
+  let updated = false
+  const nextBlocks = blocks.map((block) => {
+    if (block.id === blockId) {
+      if (block.content !== content) updated = true
+      return { ...block, content }
+    }
+
+    if (block.children.length === 0) return block
+
+    let childUpdated = false
+    const nextChildren = block.children.map((child) => {
+      if (child.id !== blockId) return child
+      if (child.content !== content) childUpdated = true
+      return { ...child, content }
+    })
+
+    if (!childUpdated) return block
+    updated = true
+    return { ...block, children: nextChildren }
+  })
+
+  return { blocks: nextBlocks, updated }
+}
+
 function App() {
   const [pages, setPages] = useState<OutlinerPage[]>(() => clonePages(INITIAL_PAGES))
   const [focusedBlockId, setFocusedBlockId] = useState<string | undefined>(undefined)
   const [historyPast, setHistoryPast] = useState<OutlinerPage[][]>([])
   const [historyFuture, setHistoryFuture] = useState<OutlinerPage[][]>([])
+  const pagesRef = useRef<OutlinerPage[]>(pages)
+
+  useEffect(() => {
+    pagesRef.current = pages
+  }, [pages])
 
   useEffect(() => {
     ; (window as E2EWindow).__outlinerE2E = {
       setCaret: setCaretByOffset,
+      setBlockContent: (blockId: string, content: string) => {
+        let didUpdate = false
+        const nextPages = pagesRef.current.map((page) => {
+          const result = updateBlockContent(page.blocks, blockId, content)
+          if (!result.updated) return page
+          didUpdate = true
+          return { ...page, blocks: result.blocks }
+        })
+
+        if (didUpdate) setPages(nextPages)
+        return didUpdate
+      },
     }
 
     return () => {
