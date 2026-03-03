@@ -117,8 +117,9 @@ function BoardColumn({ column, onStoryClick }: { column: BoardColumnData; onStor
 }
 
 export default function App() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [isInspectorOpen, setIsInspectorOpen] = useState(false)
+  const [leftPanelMode, setLeftPanelMode] = useState<'none' | 'system-settings'>('none')
   const [activeView, setActiveView] = useState<View>('board')
   const [activeTheme, setActiveTheme] = useState<ThemeMode>(() => {
     if (typeof window === 'undefined') return 'system'
@@ -175,7 +176,7 @@ export default function App() {
         onChangeTheme={setActiveTheme}
       />
 
-      <div className="relative flex h-[calc(100%-3rem)] w-full">
+      <div className="relative flex h-[calc(100%-3rem)] w-full" data-left-panel-mode={leftPanelMode}>
         <aside
           aria-label="Sidebar"
           className={[
@@ -225,6 +226,49 @@ export default function App() {
                 ))}
               </div>
             ))}
+
+          </div>
+
+          <div className="border-t border-[var(--border)] p-2">
+            <button
+              type="button"
+              onClick={() => setLeftPanelMode((mode) => (mode === 'system-settings' ? 'none' : 'system-settings'))}
+              className="inline-flex h-8 w-full items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--card)] px-2.5 text-[12px] font-medium text-[var(--foreground)] hover:bg-[var(--muted)]"
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden className="shrink-0">
+                <circle cx="6" cy="6" r="1.6" stroke="currentColor" strokeWidth="1.2" />
+                <path d="M6 1.5v1M6 9.5v1M1.5 6h1M9.5 6h1M2.8 2.8l.7.7M8.5 8.5l.7.7M9.2 2.8l-.7.7M3.5 8.5l-.7.7" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+              </svg>
+              <span>System Settings</span>
+            </button>
+          </div>
+        </aside>
+
+        <aside
+          aria-label="System Settings Panel"
+          data-mode={leftPanelMode}
+          className={[
+            'absolute inset-y-0 left-0 z-30 w-72 border-r border-[var(--border)] bg-[var(--card)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
+            leftPanelMode === 'system-settings' ? 'translate-x-0' : '-translate-x-full',
+          ].join(' ')}
+        >
+          <header className="flex h-12 items-center justify-between border-b border-[var(--border)] px-4">
+            <p className="text-[14px] font-semibold">System Settings</p>
+            <button
+              type="button"
+              className="no-drag flex h-8 w-8 items-center justify-center rounded text-[var(--muted-foreground)] hover:bg-[var(--muted)]"
+              style={NO_DRAG_REGION_STYLE}
+              onClick={() => setLeftPanelMode('none')}
+              aria-label="Close system settings"
+            >
+              x
+            </button>
+          </header>
+          <div className="space-y-3 p-4 text-[12px] text-[var(--foreground)]">
+            <p>Format Mode</p>
+            <div className="rounded border border-[var(--border)] bg-[var(--muted)] p-2">Preserve Existing</div>
+            <p>Backup on Save</p>
+            <div className="rounded border border-[var(--border)] bg-[var(--muted)] p-2">Enabled</div>
           </div>
         </aside>
 
@@ -251,6 +295,7 @@ export default function App() {
 
         <aside
           aria-label="Inspector"
+          data-visibility={isInspectorOpen ? 'visible' : 'hidden'}
           className={[
             'absolute inset-y-0 right-0 z-20 flex h-full shrink-0 flex-col overflow-hidden bg-[var(--background)] will-change-[transform,width,opacity] transition-[transform,width,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:static lg:translate-x-0',
             isInspectorOpen

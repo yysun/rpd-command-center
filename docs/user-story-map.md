@@ -74,33 +74,33 @@
 - Frontend Design #activity
   - Layout & Design System #task
     - Define three-panel layout (sidebar / outliner / inspector) #story
-      status:: todo
+      status:: done
       slug:: design-three-panel-layout
     - Choose color palette and typography #story
-      status:: todo
+      status:: done
       slug:: design-color-typography
     - Design component library (chips, dropdowns, buttons) #story
-      status:: todo
+      status:: done
       slug:: design-component-library
   - Outliner & Inspector Wireframes #task
     - Outliner block row design (activity, task, story with chips) #story
-      status:: todo
+      status:: done
       slug:: wireframe-outliner-block
     - Inspector panel field layout #story
-      status:: todo
+      status:: done
       slug:: wireframe-inspector-panel
     - Collapsed and expanded node states #story
-      status:: todo
+      status:: done
       slug:: wireframe-collapse-expand
   - Search & Focus Wireframes #task
     - Search bar and filter panel design #story
-      status:: todo
+      status:: done
       slug:: wireframe-search-filter
     - Focus mode / zoom view layout #story
-      status:: todo
+      status:: done
       slug:: wireframe-focus-mode
     - Progress summary card design #story
-      status:: todo
+      status:: done
       slug:: wireframe-progress-summary
 
 - Frontend: App Shell #activity

@@ -54,4 +54,27 @@ describe('renderer three-panel shell', () => {
     expect(html).toContain('Outliner')
     expect(html).toContain('Inspector')
   })
+
+  it('renders inspector hidden by default with close control', () => {
+    const html = renderToStaticMarkup(React.createElement(App))
+
+    expect(html).toContain('data-visibility="hidden"')
+    expect(html).toContain('aria-label="Close story details"')
+  })
+
+  it('renders drag/no-drag markers in top bar and inspector controls', () => {
+    const html = renderToStaticMarkup(React.createElement(App))
+
+    expect(html).toContain('drag-region')
+    expect(html).toContain('no-drag')
+  })
+
+  it('renders mode-driven system settings panel scaffold', () => {
+    const html = renderToStaticMarkup(React.createElement(App))
+
+    expect(html).toContain('aria-label="System Settings Panel"')
+    expect(html).toContain('data-mode="none"')
+    expect(html).toContain('data-left-panel-mode="none"')
+    expect(html).toContain('System Settings')
+  })
 })

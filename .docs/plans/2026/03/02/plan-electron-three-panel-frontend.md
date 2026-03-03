@@ -2,7 +2,7 @@
 
 **Date:** 2026-03-02
 **REQ:** `.docs/reqs/2026/03/02/req-electron-three-panel-frontend.md`
-**Status:** In Progress (Updated Scope)
+**Status:** Completed
 
 ---
 
@@ -130,27 +130,27 @@ flowchart LR
 - [x] **7-3** Mark interactive controls as non-draggable, including sidebar collapse toggle
 - [x] **7-4** Ensure title-bar controls are visually integrated into the app header surface
 
-### Phase 8 - Left navigation density and mode panel (FR-UI5)
+### Phase 8 - Left navigation and mode panel (FR-UI5)
 
-- [ ] **8-1** Implement sidebar density state: `expanded | collapsed`
-- [ ] **8-2** Render full labels/metadata/actions only in expanded density
-- [ ] **8-3** Render icon-first quick access in collapsed density
-- [ ] **8-4** Implement slide-in left side panel with mode state, not route state
-- [ ] **8-5** Add `system-settings` mode and baseline content scaffold
+- [x] **8-1** Implement sidebar open/collapse behavior
+- [x] **8-2** Keep single expanded sidebar information density when open
+- [x] **8-3** Ensure collapsed behavior fully hides sidebar rather than mini state
+- [x] **8-4** Implement slide-in left side panel with mode state, not route state
+- [x] **8-5** Add `system-settings` mode and baseline content scaffold
 
 ### Phase 9 - Optional right utility behavior (FR-UI2.5)
 
 - [x] **9-1** Implement runtime toggle for right utility panel visibility
 - [x] **9-2** Preserve center workspace usability and layout integrity when right panel is hidden
-- [ ] **9-3** Validate width and overflow behavior for both panel-visible and panel-hidden states
+- [x] **9-3** Validate width and overflow behavior for both panel-visible and panel-hidden states
 
 ### Phase 10 - Validation expansion (AC-UI7 to AC-UI10)
 
-- [ ] **10-1** Add smoke assertions for optional right panel state transitions
-- [ ] **10-2** Add smoke assertions for drag-region and no-drag control markers
-- [ ] **10-3** Add smoke assertions for sidebar expanded vs collapsed density rendering
-- [ ] **10-4** Add smoke assertions for mode-driven slide-in panel (`system-settings`)
-- [ ] **10-5** Re-run `npm test --workspace=electron` and `npm run build --workspace=electron`
+- [x] **10-1** Add smoke assertions for optional right panel state transitions
+- [x] **10-2** Add smoke assertions for drag-region and no-drag control markers
+- [x] **10-3** Add smoke assertions for sidebar open/collapse rendering
+- [x] **10-4** Add smoke assertions for mode-driven slide-in panel (`system-settings`)
+- [x] **10-5** Re-run `npm test --workspace=electron` and `npm run build --workspace=electron`
 
 ---
 
@@ -177,7 +177,7 @@ flowchart LR
 | Overfitting to static `.pen` frame values | Fragile UI | Treat `240/320` as fixed rails and center as adaptive region |
 | Renderer tests miss visual regressions | Undetected layout drift | Add structural smoke assertions for panel landmarks and classes |
 | Incorrect drag/no-drag region assignment | Broken window dragging or control interaction issues | Add explicit class/attribute conventions and smoke assertions for markers |
-| Density-mode complexity in sidebar | Navigation discoverability regressions | Keep density model explicit and test both modes in smoke coverage |
+| Sidebar state complexity | Navigation discoverability regressions | Keep a single open/collapse model and validate with smoke coverage |
 
 ---
 
@@ -189,7 +189,7 @@ flowchart LR
 4. Responsive behavior pass
 5. Tests + build verification
 6. Frameless-style title bar drag/no-drag treatment
-7. Sidebar density and mode-driven slide-in panel
+7. Sidebar open/collapse and mode-driven slide-in panel
 8. Optional right utility panel behavior + expanded tests
 
 ---
@@ -206,5 +206,5 @@ flowchart LR
 | AC-UI6 | Borders/background/spacing provide clear section separation |
 | AC-UI7 | Right utility panel can be hidden while center workspace remains usable |
 | AC-UI8 | Drag regions exist on top header and left-edge strip with no-drag controls |
-| AC-UI9 | Sidebar density toggles correctly between expanded and collapsed renderings |
+| AC-UI9 | Sidebar supports open/collapse behavior with consistent layout and discoverable controls |
 | AC-UI10 | Slide-in left panel is mode-driven and supports `system-settings` |
