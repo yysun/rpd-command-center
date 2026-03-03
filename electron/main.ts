@@ -40,8 +40,11 @@ app.whenReady().then(() => {
   })
 })
 
-app.on('window-all-closed', () => {
+app.on('before-quit', () => {
   ipcRegistration?.dispose()
   ipcRegistration = null
+})
+
+app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })

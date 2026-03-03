@@ -13,6 +13,17 @@ const mockInvoke = vi.fn(async (channel: string) => {
 // Simulate what contextBridge would expose
 const api = {
   ping: () => mockInvoke('ping'),
+  openWorkspace: async () => ({ ok: true as const, data: { workspacePath: '/tmp/demo', markdownFiles: ['user-story-map.md'] } }),
+  loadStoryMap: async () => ({ ok: true as const, data: { filePath: '/tmp/demo/user-story-map.md', map: parse('# User Story Map'), metrics: { activityMetrics: [], taskMetrics: [] } } }),
+  saveStoryMap: async () => ({ ok: true as const, data: { filePath: '/tmp/demo/user-story-map.md', bytesWritten: 0 } }),
+  searchStories: async () => ({ ok: true as const, data: { storyIds: [] } }),
+  filterStories: async () => ({ ok: true as const, data: { storyIds: [] } }),
+  validateSlug: async () => ({ ok: true as const, data: { slug: 'demo', isValidFormat: true, isUnique: true, conflictingStoryIds: [] } }),
+  computeMetrics: async () => ({ ok: true as const, data: { activityMetrics: [], taskMetrics: [] } }),
+  startWatchStoryMap: async () => ({ ok: true as const, data: { filePath: '/tmp/demo/user-story-map.md' } }),
+  stopWatchStoryMap: async () => ({ ok: true as const, data: { stopped: true } }),
+  onExternalStoryMapChanged: () => () => undefined,
+  onStoryMapWatchError: () => () => undefined,
 }
 
 describe('window.api shape', () => {
@@ -27,7 +38,20 @@ describe('window.api shape', () => {
 
   it('only exposes expected keys (no raw ipcRenderer)', () => {
     const keys = Object.keys(api)
-    expect(keys).toEqual(['ping'])
+    expect(keys).toEqual([
+      'ping',
+      'openWorkspace',
+      'loadStoryMap',
+      'saveStoryMap',
+      'searchStories',
+      'filterStories',
+      'validateSlug',
+      'computeMetrics',
+      'startWatchStoryMap',
+      'stopWatchStoryMap',
+      'onExternalStoryMapChanged',
+      'onStoryMapWatchError',
+    ])
   })
 })
 
@@ -50,9 +74,9 @@ describe('renderer three-panel shell', () => {
   it('renders visible panel headers for smoke assertions', () => {
     const html = renderToStaticMarkup(React.createElement(App))
 
-    expect(html).toContain('Sidebar')
-    expect(html).toContain('Outliner')
-    expect(html).toContain('Inspector')
+    expect(html).toContain('Story Map')
+    expect(html).toContain('Open Project...')
+    expect(html).toContain('Story Details')
   })
 
   it('renders inspector hidden by default with close control', () => {
@@ -76,5 +100,27 @@ describe('renderer three-panel shell', () => {
     expect(html).toContain('data-mode="none"')
     expect(html).toContain('data-left-panel-mode="none"')
     expect(html).toContain('System Settings')
+  })
+
+  it('renders restored mock-ui markers for activities sidebar and board lanes', () => {
+    const html = renderToStaticMarkup(React.createElement(App))
+
+    expect(html).toContain('project-context')
+    expect(html).toContain('ACTIVITIES')
+    expect(html).toContain('World Management')
+    expect(html).toContain('Agent Authoring')
+  })
+
+  it('renders compact add menus and delete controls across levels', () => {
+    const html = renderToStaticMarkup(React.createElement(App))
+
+    expect(html).toContain('aria-label="Add activity"')
+    expect(html).toContain('aria-label="Open actions for World Management"')
+    expect(html).toContain('aria-label="Add task in World Management"')
+    expect(html).toContain('aria-label="Add story under Create &amp; configure world"')
+    expect(html).toContain('aria-label="Add story under Import / export world"')
+    expect(html).toContain('aria-label="Delete activity World Management"')
+    expect(html).toContain('aria-label="Open task actions for Create &amp; configure world"')
+    expect(html).toContain('aria-label="Delete story Create new world from scratch"')
   })
 })
