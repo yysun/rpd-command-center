@@ -4,7 +4,8 @@
   "version": "0.0.1",
   "workspaces": [
     "core",
-    "electron"
+    "electron",
+    "outliner"
   ],
   "scripts": {
     "dev": "npm run dev --workspace=electron",
