@@ -1,5 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
 import { parse } from 'core'
+import React from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import App from '../renderer/src/App'
 
 // Mock the electron preload environment
 const mockInvoke = vi.fn(async (channel: string) => {
@@ -32,5 +35,23 @@ describe('core workspace import', () => {
   it('imports parse from core and executes', () => {
     const map = parse('# User Story Map\n\n- A #activity\n')
     expect(map.activities.length).toBe(1)
+  })
+})
+
+describe('renderer three-panel shell', () => {
+  it('renders sidebar, outliner, and inspector landmarks', () => {
+    const html = renderToStaticMarkup(React.createElement(App))
+
+    expect(html).toContain('aria-label="Sidebar"')
+    expect(html).toContain('aria-label="Outliner"')
+    expect(html).toContain('aria-label="Inspector"')
+  })
+
+  it('renders visible panel headers for smoke assertions', () => {
+    const html = renderToStaticMarkup(React.createElement(App))
+
+    expect(html).toContain('Sidebar')
+    expect(html).toContain('Outliner')
+    expect(html).toContain('Inspector')
   })
 })

@@ -8,8 +8,12 @@ function registerIpcHandlers(): void {
 
 function createWindow(): void {
   const win = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: 1360,
+    height: 860,
+    minWidth: 1080,
+    minHeight: 700,
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
+    backgroundColor: '#fafafa',
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

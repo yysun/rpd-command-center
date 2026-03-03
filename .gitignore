@@ -30,3 +30,6 @@ npm-debug.log*
 # Env
 .env
 .env.local
+
+
+dist/
