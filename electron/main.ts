@@ -1,10 +1,9 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, dialog } from 'electron'
 import { join } from 'path'
 import { ipcMain } from 'electron'
+import { FileWatchRegistry, registerWorkspaceIpcHandlers } from './workspaceIpc'
 
-function registerIpcHandlers(): void {
-  ipcMain.handle('ping', () => 'pong')
-}
+let ipcRegistration: ReturnType<typeof registerWorkspaceIpcHandlers> | null = null
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -30,7 +29,10 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
-  registerIpcHandlers()
+  ipcRegistration = registerWorkspaceIpcHandlers(ipcMain, new FileWatchRegistry(), {
+    showOpenDialog: dialog.showOpenDialog.bind(dialog),
+    fromWebContents: BrowserWindow.fromWebContents,
+  })
   createWindow()
 
   app.on('activate', () => {
@@ -39,5 +41,7 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
+  ipcRegistration?.dispose()
+  ipcRegistration = null
   if (process.platform !== 'darwin') app.quit()
 })
