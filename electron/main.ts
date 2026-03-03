@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog } from 'electron'
-import { join } from 'path'
+import { join } from 'node:path'
 import { ipcMain } from 'electron'
 import { FileWatchRegistry, registerWorkspaceIpcHandlers } from './workspaceIpc'
 

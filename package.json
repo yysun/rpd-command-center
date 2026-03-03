@@ -8,7 +8,7 @@
     "outliner"
   ],
   "scripts": {
-    "dev": "npm run dev --workspace=electron",
+    "dev": "npm run dev --prefix electron",
     "build": "npm run build --workspace=core && npm run build --workspace=electron",
     "test": "npm test --workspaces --if-present",
     "lint": "eslint ."

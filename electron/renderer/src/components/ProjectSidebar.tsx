@@ -27,7 +27,7 @@ type ProjectSidebarProps = {
   onAddTask: (activityKey: string) => void
   onAddStory: (activityKey: string, taskLabel?: string) => void
   onDeleteActivity: (activityKey: string) => void
-  onDeleteTask: (activityKey: string, taskIndex: number) => void
+  onDeleteTask: (activityKey: string, taskId: string) => void
   onToggleSystemSettings: () => void
 }
 
@@ -207,18 +207,18 @@ export default function ProjectSidebar({
                   />
                 </div>
                 {isOpen
-                  ? item.tasks?.map((task, taskIndex) => (
-                    <div key={`${task}-${taskIndex}`} className="mx-2 mt-0.5 flex items-center gap-1.5 rounded py-1.5 pl-8 pr-0">
+                  ? item.tasks?.map((task) => (
+                    <div key={task.id} className="mx-2 mt-0.5 flex items-center gap-1.5 rounded py-1.5 pl-8 pr-0">
                       <span className="text-[10px] text-[var(--muted-foreground)]">o</span>
-                      <span className="truncate text-[12px] text-[var(--foreground)]">{task}</span>
+                      <span className="truncate text-[12px] text-[var(--foreground)]">{task.label}</span>
                       <span className="ml-auto">
                         <SidebarActionsMenu
-                          ariaLabel={`Open task actions for ${task}`}
+                          ariaLabel={`Open task actions for ${task.label}`}
                           newItems={[
-                            { label: 'Add story', onClick: () => onAddStory(item.key, task), ariaLabel: `Add story in ${task}` },
+                            { label: 'Add story', onClick: () => onAddStory(item.key, task.id), ariaLabel: `Add story in ${task.label}` },
                           ]}
                           deleteItems={[
-                            { label: 'Delete task', onClick: () => onDeleteTask(item.key, taskIndex), ariaLabel: `Delete task ${task}` },
+                            { label: 'Delete task', onClick: () => onDeleteTask(item.key, task.id), ariaLabel: `Delete task ${task.label}` },
                           ]}
                         />
                       </span>

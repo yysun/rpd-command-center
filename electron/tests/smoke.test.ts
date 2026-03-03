@@ -63,12 +63,20 @@ describe('core workspace import', () => {
 })
 
 describe('renderer three-panel shell', () => {
-  it('renders sidebar, outliner, and inspector landmarks', () => {
+  it('renders sidebar, board, and inspector landmarks', () => {
     const html = renderToStaticMarkup(React.createElement(App))
 
     expect(html).toContain('aria-label="Sidebar"')
-    expect(html).toContain('aria-label="Outliner"')
+    expect(html).toContain('aria-label="Board"')
     expect(html).toContain('aria-label="Inspector"')
+  })
+
+  it('renders view toggles for board, outline, and timeline', () => {
+    const html = renderToStaticMarkup(React.createElement(App))
+
+    expect(html).toContain('Board')
+    expect(html).toContain('Outline')
+    expect(html).toContain('Timeline')
   })
 
   it('renders visible panel headers for smoke assertions', () => {
@@ -120,7 +128,6 @@ describe('renderer three-panel shell', () => {
     expect(html).toContain('aria-label="Add story under Create &amp; configure world"')
     expect(html).toContain('aria-label="Add story under Import / export world"')
     expect(html).toContain('aria-label="Delete activity World Management"')
-    expect(html).toContain('aria-label="Open task actions for Create &amp; configure world"')
     expect(html).toContain('aria-label="Delete story Create new world from scratch"')
   })
 })

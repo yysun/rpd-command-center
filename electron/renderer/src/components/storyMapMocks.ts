@@ -1,4 +1,4 @@
-import type { ActivityItem, BoardColumnData, InspectorStoryData } from './storyMapTypes'
+import type { ActivityItem, BoardColumnData, InspectorStoryData, TaskRowData } from './storyMapTypes'
 
 function mkMockStory(id: string, title: string, status: string, slug: string, docs?: string[]): InspectorStoryData {
   return {
@@ -62,14 +62,21 @@ export const mockActivities: ActivityItem[] = [
   },
 ]
 
+function mkTasks(activityKey: string, labels: string[]): TaskRowData[] {
+  return labels.map((label, index) => ({
+    id: `${activityKey}-task-${index + 1}`,
+    label,
+  }))
+}
+
 const richColumns: Record<string, Omit<BoardColumnData, 'key' | 'title' | 'count'>> = {
   'world-management': {
-    tasks: ['Create & configure world', 'Import / export world', 'Manage world settings'],
+    tasks: mkTasks('world-management', ['Create & configure world', 'Import / export world', 'Manage world settings']),
     cards: [
       {
         id: 'mock-world-1',
         title: 'Create new world from scratch',
-        task: 'Create & configure world',
+        taskId: 'world-management-task-1',
         meta: 'todo  low  owner:core',
         docs: 'REQ, PLAN',
         inspector: mkMockStory('mock-world-1', 'Create new world from scratch', 'todo', 'create-world', ['REQ', 'PLAN']),
@@ -77,7 +84,7 @@ const richColumns: Record<string, Omit<BoardColumnData, 'key' | 'title' | 'count
       {
         id: 'mock-world-2',
         title: 'Validate world configuration schema',
-        task: 'Manage world settings',
+        taskId: 'world-management-task-3',
         meta: 'in-progress  medium  owner:core',
         docs: 'REQ',
         inspector: mkMockStory('mock-world-2', 'Validate world configuration schema', 'doing', 'validate-world-schema', ['REQ']),
@@ -85,19 +92,19 @@ const richColumns: Record<string, Omit<BoardColumnData, 'key' | 'title' | 'count
     ],
   },
   'agent-authoring': {
-    tasks: ['Define agent', 'Configure model', 'Validate instructions'],
+    tasks: mkTasks('agent-authoring', ['Define agent', 'Configure model', 'Validate instructions']),
     cards: [
       {
         id: 'mock-agent-1',
         title: 'Write agent persona & instructions',
-        task: 'Define agent',
+        taskId: 'agent-authoring-task-1',
         meta: 'todo  high  owner:frontend',
         inspector: mkMockStory('mock-agent-1', 'Write agent persona & instructions', 'todo', 'agent-persona'),
       },
       {
         id: 'mock-agent-2',
         title: 'Configure agent model & params',
-        task: 'Configure model',
+        taskId: 'agent-authoring-task-2',
         meta: 'todo  medium  owner:frontend',
         docs: 'PLAN',
         inspector: mkMockStory('mock-agent-2', 'Configure agent model & params', 'todo', 'agent-model-params', ['PLAN']),
@@ -105,12 +112,12 @@ const richColumns: Record<string, Omit<BoardColumnData, 'key' | 'title' | 'count
     ],
   },
   'chat-conversations': {
-    tasks: ['Start conversation', 'Resume conversation'],
+    tasks: mkTasks('chat-conversations', ['Start conversation', 'Resume conversation']),
     cards: [
       {
         id: 'mock-chat-1',
         title: 'Start new chat session',
-        task: 'Start conversation',
+        taskId: 'chat-conversations-task-1',
         meta: 'done  low  owner:app',
         docs: 'DONE',
         inspector: mkMockStory('mock-chat-1', 'Start new chat session', 'done', 'start-chat-session', ['DONE']),
@@ -118,7 +125,7 @@ const richColumns: Record<string, Omit<BoardColumnData, 'key' | 'title' | 'count
       {
         id: 'mock-chat-2',
         title: 'Resume previous conversation',
-        task: 'Resume conversation',
+        taskId: 'chat-conversations-task-2',
         meta: 'todo  medium  owner:app',
         inspector: mkMockStory('mock-chat-2', 'Resume previous conversation', 'todo', 'resume-chat-session'),
       },
@@ -142,7 +149,7 @@ export const mockBoardColumns: BoardColumnData[] = mockActivities.map((activity)
     key: activity.key,
     title: activity.label,
     count: '0',
-    tasks: activity.tasks?.length ? activity.tasks : ['No task'],
+    tasks: mkTasks(activity.key, activity.tasks?.length ? activity.tasks : ['No task']),
     cards: [],
   }
 })
