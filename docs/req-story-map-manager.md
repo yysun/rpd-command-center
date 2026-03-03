@@ -68,7 +68,7 @@ Design deliverables that drive Phase 4–9 implementation (can run in parallel w
 - Three-panel layout definition (sidebar / outliner / inspector)
 - Color palette, typography, and component library (chips, dropdowns, buttons)
 - Wireframes: outliner block rows, inspector field layout, collapsed/expanded states
-- Wireframes: search/filter panel, focus mode / zoom view, progress summary card
+- Wireframes: search/filter panel, timeline view, and user story map board
 
 ### Phase 4 — Frontend: App Shell
 Electron + Vite + React renderer scaffold wired to the core IPC layer.
@@ -97,17 +97,17 @@ Search bar, filter panel, and saved queries (FR-4).
 - Multi-select status filter, doc-coverage filter, unfinished-tasks filter
 - Named filter presets; built-in queries (Doing, No Docs, Touched Recently, By Status)
 
-### Phase 8 — Frontend: Zoom & Focus Mode
-Focused view and progress summaries (FR-5).
-- Click activity/task to enter focus; back navigation
-- Status counts, percent-done, doc-coverage summary
-- Aggregated clickable doc refs in focused view
+### Phase 8 — Frontend: Timeline View
+Logseq-journal-like chronological workflow for story work tracking (FR-5).
+- Timeline view grouped by date (journal-style)
+- Show story/task updates as chronological entries with quick jump-to-node
+- Date navigation (previous/next/today) and timeline filtering
 
-### Phase 9 — Frontend: Doc Templates
-Template workflow wired to inspector (FR-6).
-- Create REQ/PLAN/DONE doc from template; auto-link into story
-- Filename generation (`{type}-{slug}.md`), date-folder placement
-- User-configurable template files
+### Phase 9 — Frontend: User Story Map View
+Story map board view based on Activities -> Tasks -> Release Slice (FR-8).
+- Visual lanes with Activities at top and Tasks as the middle lane (instead of Backbone)
+- Release Slice cards aligned under Tasks for planning and sequencing
+- Click-to-focus from map cards back to outliner/inspector context
 
 ### Phase 10 — Polish & Configuration
 Format mode setting, progress metrics display, and UX reliability (FR-6b, FR-7).
@@ -192,11 +192,12 @@ A **Format Mode** setting controls behavior on save:
 - **FR-4.5** Save and recall named filter presets
 - **FR-4.6** Built-in saved queries: "Doing", "No Docs", "Touched Recently", "By Status"
 
-### FR-5: Zoom / Focus Mode
-- **FR-5.1** Clicking an Activity or Task enters a focused view showing only its children
-- **FR-5.2** Focused view displays a progress summary: counts by status and percent done
-- **FR-5.3** Focused view shows a doc-coverage summary (has docs / missing docs)
-- **FR-5.4** Focused view lists aggregated doc refs (all refs under the focused node), clickable
+### FR-5: Timeline View
+- **FR-5.1** Render a journal-style timeline grouped by date (most recent first)
+- **FR-5.2** Each timeline entry links back to its source Activity/Task/Story node
+- **FR-5.3** Timeline entries include key change metadata (status change, doc ref added, title edit)
+- **FR-5.4** Date navigation supports previous day, next day, and jump to today
+- **FR-5.5** Timeline view supports filters by status and doc coverage
 
 ### FR-6: Doc Template Workflow
 - **FR-6.1** "Create REQ/PLAN/DONE doc" action available from the Inspector
@@ -215,6 +216,13 @@ A **Format Mode** setting controls behavior on save:
 - **FR-7.1** Activity and Task nodes display status counts (todo / doing / done) inline
 - **FR-7.2** Percent-done indicator visible on Activity and Task nodes
 - **FR-7.3** Query views for "Doing" and "No Docs" render as grouped outlines (not cards)
+
+### FR-8: User Story Map View
+- **FR-8.1** Provide a board layout with lanes in this order: Activities (top), Tasks (middle), Release Slice (bottom)
+- **FR-8.2** Tasks lane replaces the traditional Backbone lane terminology in UI labels
+- **FR-8.3** Release Slice cards are positioned under related Tasks for planning sequence visibility
+- **FR-8.4** Clicking a card opens the corresponding node context in outliner/inspector
+- **FR-8.5** Board supports horizontal scrolling for larger maps while preserving lane headers
 
 ---
 
@@ -249,6 +257,27 @@ A **Format Mode** setting controls behavior on save:
 - **Center outliner:** nested Activity → Task → Story blocks with inline chips
 - **Right inspector:** structured fields for selected Story block
 
+### Phase 9 Wireframe — User Story Map View
+
+```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Activities                                                                                         │
+│  [Activity A]   [Activity B]              [Activity C]                    [Activity D]             │
+├────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Tasks                                                                                              │
+│  [Task A1] [Task A2] [Task B1] [Task C1] [Task C2] [Task D1] [Task D2]                            │
+├────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Release Slice                                                                                      │
+│  [R1]      [R1]      [R1]      [R1]      [R2]      [R2]      [R2]                                 │
+│  [R2]      [R2]      [R2]      [R2]                [R3]      [R3]                                 │
+│            [R3]                                            [R4]                                     │
+└────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+- **Lane 1:** Activities are high-level journey blocks
+- **Lane 2:** Tasks are the backbone-equivalent planning lane label for this product
+- **Lane 3:** Release Slice cards group delivery increments under related Tasks
+
 ---
 
 ## Acceptance Criteria
@@ -259,8 +288,10 @@ A **Format Mode** setting controls behavior on save:
 | AC-2 | Edit story status/slug/doc refs via Inspector, save, and the Markdown remains human-readable and structurally consistent |
 | AC-3 | Indent/outdent and drag-drop correctly move stories between tasks; saved file reflects new structure |
 | AC-4 | Search and filter by status and "missing docs" return correct results |
-| AC-5 | Create a REQ or PLAN doc from template; link is automatically added to the story |
-| AC-6 | Atomic saves + backup guarantee the file is never corrupted, even on an unclean shutdown |
+| AC-5 | Timeline view renders date-grouped entries and each entry can navigate to its source node |
+| AC-6 | User Story Map view renders Activities/Tasks/Release Slice lanes with Tasks as the middle lane label |
+| AC-7 | Create a REQ or PLAN doc from template; link is automatically added to the story |
+| AC-8 | Atomic saves + backup guarantee the file is never corrupted, even on an unclean shutdown |
 
 ---
 
