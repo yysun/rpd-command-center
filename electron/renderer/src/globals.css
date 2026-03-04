@@ -30,6 +30,15 @@
   --status-info-fg: #2563eb;
   --status-warn-bg: #fef3c7;
   --status-warn-fg: #d97706;
+  --map-activity-card-bg: #ef7f7f;
+  --map-activity-card-fg: #fff8f8;
+  --map-task-card-bg: #59aab1;
+  --map-task-card-fg: #f3feff;
+  --map-release-card-bg: #f6c227;
+  --map-release-card-fg: #3e3107;
+  --map-release-chip-bg: #e7b51e;
+  --map-release-chip-fg: #5e4300;
+  --map-release-muted-fg: #6c5611;
   color-scheme: light;
 }
 
@@ -49,6 +58,15 @@
   --status-info-fg: #2563eb;
   --status-warn-bg: #fef3c7;
   --status-warn-fg: #d97706;
+  --map-activity-card-bg: #ef7f7f;
+  --map-activity-card-fg: #fff8f8;
+  --map-task-card-bg: #59aab1;
+  --map-task-card-fg: #f3feff;
+  --map-release-card-bg: #f6c227;
+  --map-release-card-fg: #3e3107;
+  --map-release-chip-bg: #e7b51e;
+  --map-release-chip-fg: #5e4300;
+  --map-release-muted-fg: #6c5611;
   color-scheme: light;
 }
 
@@ -68,6 +86,15 @@
   --status-info-fg: #94c5ff;
   --status-warn-bg: #4c3407;
   --status-warn-fg: #ffd277;
+  --map-activity-card-bg: #9c5252;
+  --map-activity-card-fg: #fff1f1;
+  --map-task-card-bg: #2f6b71;
+  --map-task-card-fg: #e9fbff;
+  --map-release-card-bg: #8b6b14;
+  --map-release-card-fg: #fff4cf;
+  --map-release-chip-bg: #72570e;
+  --map-release-chip-fg: #ffe7a1;
+  --map-release-muted-fg: #efd18b;
   color-scheme: dark;
 }
 

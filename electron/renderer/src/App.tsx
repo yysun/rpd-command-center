@@ -2,12 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BoardColumnData, InspectorStoryData, StoryCardData, StoryMap, TaskRowData } from 'core'
 import type { OutlinerBlock, OutlinerPage } from 'outliner'
 import BoardLanes from './components/BoardLanes'
+import MapLanes from './components/MapLanes'
 import OutlinerLanes from './components/Outliner'
 import MainTitleBar, { type ThemeMode, type View } from './components/MainTitleBar'
 import ProjectSidebar from './components/ProjectSidebar'
 import StoryInspector from './components/StoryInspector'
 import { mockBoardColumns } from './components/storyMapMocks'
-import type { ActivityItem } from './components/storyMapTypes'
+import type { ActivityItem, BoardFocusTarget } from './components/storyMapTypes'
 import { findStoryMapFile, isMatchingWatchEvent, joinPath } from './appShell'
 
 const THEME_STORAGE_KEY = 'rpd-theme-preference'
@@ -25,6 +26,12 @@ type ColumnHistory = {
   past: BoardColumnData[][]
   present: BoardColumnData[]
   future: BoardColumnData[][]
+}
+
+type OutlinerFocusRequest = {
+  blockId: string
+  requestId: number
+  expandAncestors?: boolean
 }
 
 function getApi(): ApiBridge {
@@ -173,6 +180,7 @@ export default function App() {
   const [activeAbsoluteFilePath, setActiveAbsoluteFilePath] = useState<string | null>(null)
   const [storyMap, setStoryMap] = useState<StoryMap | null>(null)
   const [selectedStoryId, setSelectedStoryId] = useState<string | null>(null)
+  const [outlinerFocusRequest, setOutlinerFocusRequest] = useState<OutlinerFocusRequest | null>(null)
   const [isOpeningWorkspace, setIsOpeningWorkspace] = useState(false)
   const [isLoadingStoryMap, setIsLoadingStoryMap] = useState(false)
   const [watchErrorMessage, setWatchErrorMessage] = useState<string | null>(null)
@@ -185,6 +193,7 @@ export default function App() {
   })
   const requestVersionRef = useRef(0)
   const idCounterRef = useRef(1)
+  const focusRequestCounterRef = useRef(0)
 
   const baseColumns = useMemo<BoardColumnData[]>(() => {
     if (!storyMap) return mockBoardColumns
@@ -387,7 +396,37 @@ export default function App() {
   }
 
   function selectStoryById(storyId?: string): void {
-    if (storyId) setSelectedStoryId(storyId)
+    if (!storyId) return
+    setSelectedStoryId(storyId)
+    setIsInspectorOpen(true)
+  }
+
+  function requestOutlinerFocus(blockId: string, expandAncestors = true): void {
+    focusRequestCounterRef.current += 1
+    setOutlinerFocusRequest({
+      blockId,
+      requestId: focusRequestCounterRef.current,
+      expandAncestors,
+    })
+  }
+
+  function onBoardFocusNode(target: BoardFocusTarget): void {
+    if (target.kind === 'activity') {
+      setSelectedStoryId(null)
+      setIsInspectorOpen(false)
+      requestOutlinerFocus(`page:${target.id}`, false)
+      return
+    }
+
+    if (target.kind === 'task') {
+      setSelectedStoryId(null)
+      setIsInspectorOpen(false)
+      requestOutlinerFocus(taskBlockId(target.id), true)
+      return
+    }
+
+    selectStoryById(target.id)
+    requestOutlinerFocus(storyBlockId(target.id), true)
   }
 
   function toggleActivity(activityKey: string): void {
@@ -540,7 +579,12 @@ export default function App() {
   }
 
   function onOutlinerBlockFocus(blockId?: string): void {
-    if (!blockId) return
+    if (!blockId) {
+      setSelectedStoryId(null)
+      setIsInspectorOpen(false)
+      return
+    }
+
     const parsedStoryId = parsePrefixedId(blockId, 'story:')
     if (parsedStoryId) {
       selectStoryById(parsedStoryId)
@@ -549,6 +593,10 @@ export default function App() {
 
     const hasStory = uiColumns.some((column) => column.cards.some((card) => card.id === blockId))
     if (hasStory) selectStoryById(blockId)
+    else {
+      setSelectedStoryId(null)
+      setIsInspectorOpen(false)
+    }
   }
 
   function undoOutliner(): void {
@@ -686,11 +734,24 @@ export default function App() {
           />
         ) : null}
 
+        {activeView === 'map' ? (
+          <MapLanes
+            columns={uiColumns}
+            onFocusNode={onBoardFocusNode}
+            onAddTask={onAddTask}
+            onAddStory={onAddStory}
+            onDeleteActivity={onDeleteActivity}
+            onDeleteTask={onDeleteTask}
+            onDeleteStory={onDeleteStory}
+          />
+        ) : null}
+
         {activeView === 'outline' ? (
           <OutlinerLanes
             pages={outlinerPages}
             onPagesChange={onOutlinerPagesChange}
             onBlockFocus={onOutlinerBlockFocus}
+            focusRequest={outlinerFocusRequest ?? undefined}
             onUndo={undoOutliner}
             onRedo={redoOutliner}
             canUndo={columnHistory.past.length > 0}

@@ -1,6 +1,6 @@
 import { DRAG_REGION_STYLE, NO_DRAG_REGION_STYLE } from '../constants/app-constants'
 
-export type View = 'board' | 'outline' | 'timeline'
+export type View = 'board' | 'map' | 'outline' | 'timeline'
 export type ThemeMode = 'system' | 'light' | 'dark'
 
 type MainTitleBarProps = {
@@ -158,6 +158,28 @@ export default function MainTitleBar({
 
             <button
               type="button"
+              onClick={() => onChangeView('map')}
+              className={[
+                'no-drag flex items-center gap-1.5 rounded px-2.5 py-1 text-[12px]',
+                activeView === 'map'
+                  ? 'bg-[var(--card)] text-[var(--foreground)] shadow-sm'
+                  : 'text-[var(--muted-foreground)]',
+              ].join(' ')}
+              style={NO_DRAG_REGION_STYLE}
+            >
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden>
+                <rect x="1" y="1" width="4" height="3" rx="0.75" fill="currentColor" opacity="0.9" />
+                <rect x="8" y="1" width="4" height="3" rx="0.75" fill="currentColor" opacity="0.9" />
+                <rect x="1" y="5" width="4" height="3" rx="0.75" fill="currentColor" opacity="0.6" />
+                <rect x="8" y="5" width="4" height="3" rx="0.75" fill="currentColor" opacity="0.6" />
+                <rect x="1" y="9" width="4" height="3" rx="0.75" fill="currentColor" opacity="0.35" />
+                <rect x="8" y="9" width="4" height="3" rx="0.75" fill="currentColor" opacity="0.35" />
+              </svg>
+              Map
+            </button>
+
+            <button
+              type="button"
               onClick={() => onChangeView('outline')}
               className={[
                 'no-drag flex items-center gap-1.5 rounded px-2.5 py-1 text-[12px]',
@@ -175,26 +197,6 @@ export default function MainTitleBar({
               Outline
             </button>
 
-            <button
-              type="button"
-              onClick={() => onChangeView('timeline')}
-              className={[
-                'no-drag flex items-center gap-1.5 rounded px-2.5 py-1 text-[12px]',
-                activeView === 'timeline'
-                  ? 'bg-[var(--card)] text-[var(--foreground)] shadow-sm'
-                  : 'text-[var(--muted-foreground)]',
-              ].join(' ')}
-              style={NO_DRAG_REGION_STYLE}
-            >
-              <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden>
-                <rect x="1" y="1" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="1.5" />
-                <rect x="3.5" y="0.25" width="1.5" height="3" rx="0.75" fill="currentColor" />
-                <rect x="8" y="0.25" width="1.5" height="3" rx="0.75" fill="currentColor" />
-                <line x1="1" y1="5" x2="12" y2="5" stroke="currentColor" strokeWidth="1.2" />
-                <rect x="3" y="7" width="3" height="1.5" rx="0.5" fill="currentColor" />
-              </svg>
-              Timeline
-            </button>
           </div>
 
           {/* Theme selector */}

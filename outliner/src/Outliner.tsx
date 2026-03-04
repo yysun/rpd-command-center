@@ -141,6 +141,20 @@ function findBlockLocation(blocks: Block[], id: string): BlockLocation | null {
   return search(blocks)
 }
 
+function findAncestorIds(blocks: Block[], id: string): string[] {
+  const location = findBlockLocation(blocks, id)
+  const ancestors: string[] = []
+  let parent = location?.parent
+
+  while (parent) {
+    ancestors.unshift(parent.id)
+    const parentLocation = findBlockLocation(blocks, parent.id)
+    parent = parentLocation?.parent
+  }
+
+  return ancestors
+}
+
 function createSiblingBlock(source: Block, idFactory: () => string, content = ''): Block {
   const siblingId = idFactory()
   if (source.isPageRoot) {
@@ -960,7 +974,7 @@ function OutlinerEditor({ blocks, collapsed, editorRef, onBlocksChange, onBlocks
   )
 }
 
-export default function Outliner({ pages, onPagesChange, onBlockFocus, onUndo, onRedo, canUndo, canRedo }: OutlinerProps) {
+export default function Outliner({ pages, onPagesChange, onBlockFocus, focusRequest, onUndo, onRedo, canUndo, canRedo }: OutlinerProps) {
   const [blocks, setBlocks] = useState<Block[]>(() => pagesToBlocks(pages))
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const editorRef = useRef<HTMLDivElement>(null)
@@ -968,6 +982,7 @@ export default function Outliner({ pages, onPagesChange, onBlockFocus, onUndo, o
   const selfCommittedPagesRef = useRef<string | null>(null)
   const pendingMutationRef = useRef<MutationResult | null>(null)
   const pendingCaretRestoreRef = useRef<CaretSnapshot | null>(null)
+  const pendingExternalFocusRef = useRef<{ blockId: string; requestId: number } | null>(null)
 
   function snapshotPages(input: OutlinerPage[]): string {
     return JSON.stringify(input)
@@ -988,6 +1003,29 @@ export default function Outliner({ pages, onPagesChange, onBlockFocus, onUndo, o
   useEffect(() => {
     setCollapsed((previous) => new Set(Array.from(previous).filter((id) => blockIdSet.has(id))))
   }, [blockIdSet])
+
+  useEffect(() => {
+    if (!focusRequest) return
+
+    const location = findBlockLocation(blocks, focusRequest.blockId)
+    if (!location) return
+
+    pendingExternalFocusRef.current = {
+      blockId: focusRequest.blockId,
+      requestId: focusRequest.requestId,
+    }
+
+    if (!focusRequest.expandAncestors) return
+
+    const ancestorIds = findAncestorIds(blocks, focusRequest.blockId)
+    if (ancestorIds.length === 0) return
+
+    setCollapsed((previous) => {
+      const next = new Set(previous)
+      for (const ancestorId of ancestorIds) next.delete(ancestorId)
+      return next
+    })
+  }, [blocks, focusRequest])
 
   useLayoutEffect(() => {
     const pending = pendingMutationRef.current
@@ -1013,6 +1051,23 @@ export default function Outliner({ pages, onPagesChange, onBlockFocus, onUndo, o
 
     restoreCaret(editorElement)
   }, [blocks, onBlockFocus])
+
+  useLayoutEffect(() => {
+    const pending = pendingExternalFocusRef.current
+    if (!pending) return
+
+    const editorElement = editorRef.current
+    if (!editorElement) return
+
+    const target = document.getElementById(pending.blockId)
+    if (!(target instanceof HTMLElement) || !editorElement.contains(target)) return
+
+    pendingExternalFocusRef.current = null
+    clearSavedCaret(editorElement)
+    editorElement.focus()
+    createCaret(target, false)
+    onBlockFocus?.(target.id)
+  }, [blocks, collapsed, onBlockFocus])
 
   function createId(): string {
     idCounterRef.current += 1

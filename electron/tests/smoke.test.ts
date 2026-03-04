@@ -71,12 +71,13 @@ describe('renderer three-panel shell', () => {
     expect(html).toContain('aria-label="Inspector"')
   })
 
-  it('renders view toggles for board, outline, and timeline', () => {
+  it('renders view toggles for board, map, and outline', () => {
     const html = renderToStaticMarkup(React.createElement(App))
 
     expect(html).toContain('Board')
+    expect(html).toContain('Map')
     expect(html).toContain('Outline')
-    expect(html).toContain('Timeline')
+    expect(html).not.toContain('Timeline')
   })
 
   it('renders visible panel headers for smoke assertions', () => {
@@ -129,5 +130,13 @@ describe('renderer three-panel shell', () => {
     expect(html).toContain('aria-label="Add story under Import / export world"')
     expect(html).toContain('aria-label="Delete activity World Management"')
     expect(html).toContain('aria-label="Delete story Create new world from scratch"')
+  })
+
+  it('keeps Map as a separate mode and does not render map lanes in default Board mode', () => {
+    const html = renderToStaticMarkup(React.createElement(App))
+
+    expect(html).toContain('Map')
+    expect(html).not.toContain('Release Slice')
+    expect(html).not.toContain('Backbone')
   })
 })
